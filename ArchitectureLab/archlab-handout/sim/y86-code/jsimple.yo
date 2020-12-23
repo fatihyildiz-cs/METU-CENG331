@@ -1,0 +1,8 @@
+0x000:                      |     .pos 0
+0x000: 30f31700000000000000 |     irmovq target, %rbx
+0x00a: 30f0ebfe000000000000 |     irmovq $0xfeeb, %rax
+0x014: e03f                 |     jmpq %rbx
+0x016: 00                   |     halt
+0x017:                      | target:
+0x017: 30f0efbe000000000000 |     irmovq $0xbeef, %rax
+0x021: 00                   |     halt

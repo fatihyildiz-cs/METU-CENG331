@@ -1,0 +1,85 @@
+0x000:                      |     .pos 0
+0x000: 30f40003000000000000 |     irmovq stack, %rsp
+0x00a: 30f70e00000000000000 |     irmovq $14, %rdi
+0x014: 801e00000000000000   |     call fibsum
+0x01d: 00                   |     halt
+                            | 
+0x01e:                      | fibsum:
+                            |     # sum up fib values from 0 to arg
+                            |     # slow and nonsensical, but a nice test!
+                            |     # go from 0 to 15 instead of 15 to zero, easier for tests
+0x01e: 30fb0100000000000000 |     irmovq $1, %r11 # storing 1 all the time, even in fib
+0x028: 207c                 |     rrmovq %rdi, %r12
+0x02a: 63dd                 |     xorq %r13, %r13
+0x02c: 63ee                 |     xorq %r14, %r14
+                            | 
+0x02e: 62cc                 |     andq %r12, %r12
+0x030: 704a00000000000000   |     jmp check
+                            | 
+0x039:                      | loop:
+0x039: 20e7                 |     rrmovq %r14, %rdi
+0x03b: 808800000000000000   |     call optfib
+0x044: 60be                 |     addq %r11, %r14
+0x046: 600d                 |     addq %rax, %r13
+0x048: 61bc                 |     subq %r11, %r12
+0x04a:                      | check:
+0x04a: 753900000000000000   |     jge loop
+0x053: 20d0                 |     rrmovq %r13, %rax
+0x055: 90                   |     ret
+                            | 
+0x058:                      | .align 8
+0x058:                      | fibtable:
+0x058: bd00000000000000     |     .quad fib0
+0x060: bd00000000000000     |     .quad fib1
+0x068: c800000000000000     |     .quad fib2
+0x070: d300000000000000     |     .quad fib3
+0x078: de00000000000000     |     .quad fib4
+0x080: e900000000000000     |     .quad fib5
+                            | 
+0x088:                      | optfib: # a fib optimized (!) for the first 6 cases with a jump table
+                            |     # check if > 5
+0x088: 2071                 |     rrmovq %rdi, %rcx
+0x08a: 30f20500000000000000 |     irmovq $5, %rdx
+0x094: 6121                 |     subq %rdx, %rcx
+0x096: 76f400000000000000   |     jg recurse
+                            |     
+                            |     # otherwise, time for a jump, mult %rdi with 8
+0x09f: 6077                 |     addq %rdi, %rdi
+0x0a1: 6077                 |     addq %rdi, %rdi
+0x0a3: 6077                 |     addq %rdi, %rdi
+0x0a5: 30f15800000000000000 |     irmovq fibtable, %rcx # calc fibtable + 8 * rdi
+0x0af: 6071                 |     addq %rdi, %rcx
+0x0b1: 50110000000000000000 |     mrmovq (%rcx), %rcx # dereference
+0x0bb: e01f                 |     jmpq %rcx # and jump!
+                            | 
+0x0bd:                      | fib0:
+0x0bd:                      | fib1:
+0x0bd: 30f00100000000000000 |     irmovq $1, %rax
+0x0c7: 90                   |     ret
+0x0c8:                      | fib2:
+0x0c8: 30f00200000000000000 |     irmovq $2, %rax
+0x0d2: 90                   |     ret
+0x0d3:                      | fib3:
+0x0d3: 30f00300000000000000 |     irmovq $3, %rax
+0x0dd: 90                   |     ret
+0x0de:                      | fib4:
+0x0de: 30f00500000000000000 |     irmovq $5, %rax
+0x0e8: 90                   |     ret
+0x0e9:                      | fib5:
+0x0e9: 30f00800000000000000 |     irmovq $8, %rax
+0x0f3: 90                   |     ret
+0x0f4:                      | recurse:
+                            |     # 2^n fib, how optimized!
+0x0f4: 61b7                 |     subq %r11, %rdi
+0x0f6: a07f                 |     pushq %rdi
+0x0f8: 808800000000000000   |     call optfib 
+0x101: b07f                 |     popq %rdi
+0x103: a00f                 |     pushq %rax
+0x105: 61b7                 |     subq %r11, %rdi
+0x107: 808800000000000000   |     call optfib
+0x110: b01f                 |     popq %rcx 
+0x112: 6010                 |     addq %rcx, %rax
+0x114: 90                   |     ret
+                            | 
+0x300:                      | .pos 0x300
+0x300:                      | stack:

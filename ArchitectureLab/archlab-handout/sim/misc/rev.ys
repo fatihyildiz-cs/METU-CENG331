@@ -1,0 +1,48 @@
+#Fatih YILDIZ 2306793
+# Execution begins at address 0
+.pos 0
+  irmovq stack, %rsp      # set up stack pointer
+  irmovq ele0, %rdi		    # set parameter
+  call rev                # call rev(ele0)
+  halt                    # terminate program
+
+# Sample linked list
+.pos 0x100
+
+ele0:
+  .quad 0x0000a
+  .quad ele1
+ele1:
+  .quad 0x000b0
+  .quad ele2
+ele2:
+  .quad 0x00c00
+  .quad ele3
+ele3:
+  .quad 0x0d000
+  .quad ele4
+ele4:
+  .quad 0xe0000
+  .quad 0
+
+# rax holds prev, rdi holds head, r10 holds next.
+
+rev:
+  xorq %rax, %rax 		    # prev = 0
+  jmp test 				        # jump directly to test
+
+loop:
+
+  mrmovq 8(%rdi), %r10    # r10 = (rdi+8)     # list *next = head->next;
+  rmmovq %rax, 8(%rdi)    # (rdi+8) = rax     # head->next = rax;
+  rrmovq %rdi, %rax       # rax = rdi;        # prev = head;
+  rrmovq %r10, %rdi       # rdi = r10;        # head = next;
+
+test:
+  andq %rdi, %rdi 		 # test loop variable (head)
+  jne    loop          # Stop when head==0
+  ret                  # return prev (rax)
+
+# Stack starts here and grows to lower addresses
+  .pos 0x200
+stack:
