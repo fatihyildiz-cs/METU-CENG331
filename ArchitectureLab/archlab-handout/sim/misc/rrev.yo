@@ -29,26 +29,23 @@
 0x150:                      | rrev:
 0x150: 6300                 |   xorq %rax, %rax 		    # list* rev_head = 0
 0x152: 6277                 |   andq %rdi, %rdi         # test head
-0x154: 73aa01000000000000   |   je done                 # if(head==0) go to done
-0x15d: 50c70800000000000000 |   mrmovq $8(%rdi), %r12   # r10 = head->next
+0x154: 73a801000000000000   |   je done                 # if(head==0) go to done
+0x15d: 50c70800000000000000 |   mrmovq $8(%rdi), %r12   # r12 = head->next
 0x167: 62cc                 |   andq %r12, %r12         # test head->next
-0x169: 73aa01000000000000   |   je done                 # if(head->next==0) go to done
+0x169: 73a801000000000000   |   je done                 # if(head->next==0) go to done
                             | 
+0x172: a07f                 |   pushq %rdi			        # save value from caller
+0x174: 50770800000000000000 |   mrmovq 8(%rdi), %rdi    # rdi = rdi->next
+0x17e: 805001000000000000   |   call rrev               # rrev(rdi)
+0x187: b07f                 |   popq %rdi				        # restore caller's value
+0x189: 40771800000000000000 |   rmmovq %rdi, $24(%rdi)  # head->next->next = head
+0x193: 30fc0000000000000000 |   irmovq $0, %r12         # r12 = 0
+0x19d: 40c70800000000000000 |   rmmovq %r12, 8(%rdi)    # head->next = 0
                             | 
-0x172: 2073                 |   rrmovq %rdi, %rbx
-0x174: a03f                 |   pushq %rbx			      # else, save value from caller
-0x176: 50770800000000000000 |   mrmovq 8(%rdi), %rdi    # set rdi to send to function
-0x180: 805001000000000000   |   call rrev
-0x189: b03f                 |   popq %rbx				        # restore caller's value
-0x18b: 40331800000000000000 |   rmmovq %rbx, $24(%rbx)  # head->next->next = head
-0x195: 30fc0000000000000000 |   irmovq $0, %r12         # r12 = 0
-0x19f: 40c30800000000000000 |   rmmovq %r12, 8(%rbx)    # head->next = 0
-                            | 
-                            | 
-0x1a9: 90                   |   ret
-0x1aa:                      | done:
-0x1aa: 2070                 |   rrmovq %rdi, %rax       # return head
-0x1ac: 90                   |   ret
+0x1a7: 90                   |   ret
+0x1a8:                      | done:
+0x1a8: 2070                 |   rrmovq %rdi, %rax       # return head
+0x1aa: 90                   |   ret
                             | 
                             | # Stack starts here and grows to lower addresses
 0x200:                      |   .pos 0x200

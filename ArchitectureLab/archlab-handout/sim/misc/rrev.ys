@@ -34,15 +34,13 @@ rrev:
   andq %r12, %r12         # test head->next
   je done                 # if(head->next==0) go to done
 
-
-  rrmovq %rdi, %rbx       # copy rdi because it will change
-  pushq %rbx			        # save value from caller
-  mrmovq 8(%rdi), %rdi    # set rdi to send to function
-  call rrev
-  popq %rbx				        # restore caller's value
-  rmmovq %rbx, $24(%rbx)  # head->next->next = head
+  pushq %rdi			        # save value from caller
+  mrmovq 8(%rdi), %rdi    # rdi = rdi->next
+  call rrev               # rrev(rdi)
+  popq %rdi				        # restore caller's value
+  rmmovq %rdi, $24(%rdi)  # head->next->next = head
   irmovq $0, %r12         # r12 = 0
-  rmmovq %r12, 8(%rbx)    # head->next = 0
+  rmmovq %r12, 8(%rdi)    # head->next = 0
 
   ret
 done:
