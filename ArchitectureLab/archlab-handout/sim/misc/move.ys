@@ -1,0 +1,69 @@
+# Execution begins at address 0
+.pos 0
+	irmovq stack, %rsp  # Set up stack pointer
+	irmovq array, %rdi		# set first parameter
+	irmovq arrayp3, %rsi		# set second parameter
+	irmovq $9, %rdx			# set third parameter
+	call move      			# call move(src,dest,len)
+	halt								# Terminate program
+
+  # an array of 9 elements
+  # again, positioned absolutely
+  .pos 0x100
+  array:
+      .quad 0x000000001
+      .quad 0x000000020
+      .quad 0x000000300
+  # a pointer to the fourth element here
+  arrayp3:
+      .quad 0x000004000
+      .quad 0x000050000
+      .quad 0x000600000
+      .quad 0x007000000
+      .quad 0x080000000
+      .quad 0x900000000
+
+
+# long move(long *src, long *dest, long len)
+move:
+
+  rrmovq %rsi, %r10   # src_v = src;
+  rrmovq %rdi, %r11   # dst_v = dst;
+  xorq %rax, %rax 		# checksum = 0
+  irmovq $1, %r12     # step = 1;
+  irmovq $8, %r13     # elem_size = sizeof(long);
+
+direction:
+  irmovq $1, %r14
+
+  subq %r14, %rdi
+  addq %rdx, %rdi     # src = src + len -1
+  subq %r14, %rsi
+  addq %rdx, %rsi     # dst = dst + len -1
+
+  irmovq $0, %r12
+  subq %r14, %r12     # step = - 1
+
+while:
+  andq %rdx,%rdx			# test len
+	jmp test 				    # jump directly to test
+
+loop:
+
+	mrmovq (%rdi), %rcx 	# rcx = *src
+  xorq %rcx, %rax			  # checksum ^= rcx
+
+  mrmovq (%rdi), %rcx   # rcx = *src
+  rmmovq %rcx, (%rsi)   # *dst = rcx
+
+	addq %r12, %rsi      # src += step
+  addq %r12, %rdi      # dst += step
+	iaddq $-1, %rdx      # len--
+
+test:
+	jne loop 				# return loop if it's not 0
+	ret
+
+# The stack starts here and grows to lower addresses
+	.pos 0x400
+stack:
