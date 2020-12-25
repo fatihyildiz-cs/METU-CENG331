@@ -104,29 +104,35 @@ word ifun = [
 	1: imem_ifun;		# Default: get from instruction memory
 ];
 
+# add IJMPQ since it is also a valid operation
 bool instr_valid = icode in 
 	{ INOP, IHALT, IRRMOVQ, IIRMOVQ, IRMMOVQ, IMRMOVQ,
-	       IOPQ, IJXX, ICALL, IRET, IPUSHQ, IPOPQ };
+	       IOPQ, IJXX, ICALL, IRET, IPUSHQ, IPOPQ, IJMPQ};
+
 
 # Does fetched instruction require a regid byte?
+# since we are jumping to a register value, we do need regic byte.
 bool need_regids =
 	icode in { IRRMOVQ, IOPQ, IPUSHQ, IPOPQ, 
-		     IIRMOVQ, IRMMOVQ, IMRMOVQ };
+		     IIRMOVQ, IRMMOVQ, IMRMOVQ, IJMPQ};
 
 # Does fetched instruction require a constant word?
+# no need for valc since we are not jumping to a constant value 
 bool need_valC =
 	icode in { IIRMOVQ, IRMMOVQ, IMRMOVQ, IJXX, ICALL };
 
 ################ Decode Stage    ###################################
 
 ## What register should be used as the A source?
+# we read rA because we are jumping to that register's value
 word srcA = [
-    icode in { IRRMOVQ, IRMMOVQ, IOPQ, IPUSHQ  } : rA;
+    icode in { IRRMOVQ, IRMMOVQ, IOPQ, IPUSHQ, IJMPQ } : rA;
 	icode in { IPOPQ, IRET } : RRSP;
 	1 : RNONE; # Don't need register
 ];
 
 ## What register should be used as the B source?
+# we don't need to read rB to jump.
 word srcB = [
 	icode in { IOPQ, IRMMOVQ, IMRMOVQ  } : rB;
 	icode in { IPUSHQ, IPOPQ, ICALL, IRET } : RRSP;
@@ -134,6 +140,7 @@ word srcB = [
 ];
 
 ## What register should be used as the E destination?
+# we don't need to write back anything.
 word dstE = [
 	icode in { IRRMOVQ } && Cnd : rB;
 	icode in { IIRMOVQ, IOPQ} : rB;
@@ -142,6 +149,7 @@ word dstE = [
 ];
 
 ## What register should be used as the M destination?
+# we don't need to write back anything.
 word dstM = [
 	icode in { IMRMOVQ, IPOPQ } : rA;
 	1 : RNONE;  # Don't write any register
@@ -150,6 +158,7 @@ word dstM = [
 ################ Execute Stage   ###################################
 
 ## Select input A to ALU
+# we don't need to execute anything.
 word aluA = [
 	icode in { IRRMOVQ, IOPQ } : valA;
 	icode in { IIRMOVQ, IRMMOVQ, IMRMOVQ } : valC;
@@ -159,6 +168,7 @@ word aluA = [
 ];
 
 ## Select input B to ALU
+# we don't need to execute anything.
 word aluB = [
 	icode in { IRMMOVQ, IMRMOVQ, IOPQ, ICALL, 
 		      IPUSHQ, IRET, IPOPQ } : valB;
@@ -167,23 +177,28 @@ word aluB = [
 ];
 
 ## Set the ALU function
+# we don't need to execute anything.
 word alufun = [
 	icode == IOPQ : ifun;
 	1 : ALUADD;
 ];
 
 ## Should the condition codes be updated?
+# we don't need to execute anything.
 bool set_cc = icode in { IOPQ };
 
 ################ Memory Stage    ###################################
 
 ## Set read control signal
+# we don't need to interact with the memory
 bool mem_read = icode in { IMRMOVQ, IPOPQ, IRET };
 
 ## Set write control signal
+# we don't need to interact with the memory
 bool mem_write = icode in { IRMMOVQ, IPUSHQ, ICALL };
 
 ## Select memory address
+# we don't need to interact with the memory
 word mem_addr = [
 	icode in { IRMMOVQ, IPUSHQ, ICALL, IMRMOVQ } : valE;
 	icode in { IPOPQ, IRET } : valA;
@@ -191,7 +206,9 @@ word mem_addr = [
 ];
 
 ## Select memory input data
+# we don't need to interact with the memory
 word mem_data = [
+	
 	# Value from register
 	icode in { IRMMOVQ, IPUSHQ } : valA;
 	# Return PC
@@ -200,6 +217,7 @@ word mem_data = [
 ];
 
 ## Determine instruction status
+# we don't need to interact with the memory
 word Stat = [
 	imem_error || dmem_error : SADR;
 	!instr_valid: SINS;
@@ -210,7 +228,7 @@ word Stat = [
 ################ Program Counter Update ############################
 
 ## What address should instruction be fetched at
-
+# If icode == ijmpq, set new_pc to valA (which is read from register A)
 word new_pc = [
 	# Call.  Use instruction constant
 	icode == ICALL : valC;
@@ -218,6 +236,10 @@ word new_pc = [
 	icode == IJXX && Cnd : valC;
 	# Completion of RET instruction.  Use value from stack
 	icode == IRET : valM;
+
+	# Unconditional jump instruction. Use value from rA
+	icode == IJMPQ : valA;
+
 	# Default: Use incremented PC
 	1 : valP;
 ];
