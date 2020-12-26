@@ -1,0 +1,97 @@
+                            | # Execution begins at address 0
+0x000:                      | .pos 0
+0x000: 30f40004000000000000 | 	irmovq stack, %rsp  # Set up stack pointer
+0x00a: 30f71801000000000000 | 	irmovq arrayp3, %rdi		# set first parameter = dst
+0x014: 30f60001000000000000 | 	irmovq array, %rsi		# set second parameter = src
+0x01e: 30f20500000000000000 | 	irmovq $5, %rdx			# set third parameter
+0x028: 804801000000000000   | 	call move      			# call move(src,dest,len)
+0x031: 00                   | 	halt								# Terminate program
+                            | 
+                            | # an array of 9 elements
+                            | # again, positioned absolutely
+0x100:                      | .pos 0x100
+0x100:                      | array:
+0x100: 0100000000000000     |     .quad 0x000000001
+0x108: 2000000000000000     |     .quad 0x000000020
+0x110: 0003000000000000     |     .quad 0x000000300
+                            | # a pointer to the fourth element here
+0x118:                      | arrayp3:
+0x118: 0040000000000000     |     .quad 0x000004000
+0x120: 0000050000000000     |     .quad 0x000050000
+0x128: 0000600000000000     |     .quad 0x000600000
+0x130: 0000000700000000     |     .quad 0x007000000
+0x138: 0000008000000000     |     .quad 0x080000000
+0x140: 0000000009000000     |     .quad 0x900000000
+                            | 
+                            | 
+                            | #long move(long *dst, const long *src, long len)
+0x148:                      | move:
+                            | 
+0x148: 206a                 | 	rrmovq %rsi, %r10   # src_v = src;
+0x14a: 207b                 | 	rrmovq %rdi, %r11   # dst_v = dst;
+0x14c: 6300                 | 	xorq %rax, %rax 	# checksum = 0
+0x14e: 30f10800000000000000 | 	irmovq $8, %rcx     # step = 8;
+0x158: 30f90000000000000000 | 	irmovq $0, %r9      # elem_size = 0;
+0x162: 30fd0100000000000000 | 	irmovq $1, %r13		# loop var r13 = 1
+0x16c: 202c                 | 	rrmovq %rdx, %r12 	# loop condition
+                            | 
+0x16e: 61ba                 | 	subq %r11, %r10		# src_v = src_v - dst_v
+0x170: 76cc01000000000000   | 	jg while
+                            | 
+0x179: 206a                 | 	rrmovq %rsi, %r10   	# src_v = src;
+                            | 
+                            | 
+0x17b: 708801000000000000   | 	jmp testformult
+0x184:                      | multiply:				# elem_size = 8*len
+0x184: 6019                 | 	addq %rcx, %r9
+0x186: 61dc                 | 	subq %r13, %r12
+0x188:                      | testformult:
+0x188: 62cc                 | 	andq %r12, %r12
+0x18a: 768401000000000000   | 	jg multiply
+                            | 
+0x193: 609a                 | 	addq %r9, %r10			# temp1 = src_v + elem_size*9
+0x195: 61ab                 | 	subq %r10, %r11			# temp2 = temp2 - temp1
+0x197: 75cc01000000000000   | 	jge while
+                            | 
+0x1a0:                      | direction:
+                            | 
+0x1a0: 6388                 | 	xorq %r8, %r8
+0x1a2: 202c                 | 	rrmovq %rdx, %r12
+0x1a4: 61dc                 | 	subq %r13, %r12
+                            | 
+0x1a6: 70b301000000000000   | jmp testformult2
+0x1af:                      | multiply2:
+0x1af: 6018                 | 	addq %rcx, %r8
+0x1b1: 61dc                 | 	subq %r13, %r12
+0x1b3:                      | testformult2:
+0x1b3: 62cc                 | 	andq %r12, %r12
+0x1b5: 76af01000000000000   | 	jg multiply2
+                            | 
+0x1be: 6087                 |   	addq %r8, %rdi     # src = src + len -1
+0x1c0: 6086                 |   	addq %r8, %rsi     # dst = dst + len -1
+                            | 
+0x1c2: 30f1f8ffffffffffffff |   	irmovq $-8, %rcx			# step = - 8
+                            | 
+0x1cc:                      | while:
+0x1cc: 700302000000000000   | 	jmp test 				    # jump directly to test
+                            | 
+0x1d5:                      | loop:
+                            | 
+0x1d5: 50860000000000000000 | 	mrmovq (%rsi), %r8 	# r8 = *src
+0x1df: 6380                 |   	xorq %r8, %rax			  # checksum ^= r8
+                            | 
+0x1e1: 50860000000000000000 |   	mrmovq (%rsi), %r8   # r8 = *src
+0x1eb: 40870000000000000000 |   	rmmovq %r8, (%rdi)   # *dst = r8
+                            | 
+0x1f5: 6016                 | 	addq %rcx, %rsi      # src += step
+0x1f7: 6017                 |   	addq %rcx, %rdi      # dst += step
+0x1f9: c0f2ffffffffffffffff | 	iaddq $-1, %rdx      # len--
+                            | 
+0x203:                      | test:
+0x203: 6222                 |     andq %rdx,%rdx			# test len
+0x205: 74d501000000000000   | 	jne loop 				# return loop if it's not 0
+0x20e: 90                   | 	ret
+                            | 
+                            | # The stack starts here and grows to lower addresses
+0x400:                      | 	.pos 0x400
+0x400:                      | stack:

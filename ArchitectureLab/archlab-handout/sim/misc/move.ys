@@ -1,66 +1,94 @@
 # Execution begins at address 0
 .pos 0
 	irmovq stack, %rsp  # Set up stack pointer
-	irmovq array, %rdi		# set first parameter
-	irmovq arrayp3, %rsi		# set second parameter
-	irmovq $9, %rdx			# set third parameter
+	irmovq arrayp3, %rdi		# set first parameter = dst
+	irmovq array, %rsi		# set second parameter = src
+	irmovq $5, %rdx			# set third parameter
 	call move      			# call move(src,dest,len)
 	halt								# Terminate program
 
-  # an array of 9 elements
-  # again, positioned absolutely
-  .pos 0x100
-  array:
-      .quad 0x000000001
-      .quad 0x000000020
-      .quad 0x000000300
-  # a pointer to the fourth element here
-  arrayp3:
-      .quad 0x000004000
-      .quad 0x000050000
-      .quad 0x000600000
-      .quad 0x007000000
-      .quad 0x080000000
-      .quad 0x900000000
+# an array of 9 elements
+# again, positioned absolutely
+.pos 0x100
+array:
+    .quad 0x000000001
+    .quad 0x000000020
+    .quad 0x000000300
+# a pointer to the fourth element here
+arrayp3:
+    .quad 0x000004000
+    .quad 0x000050000
+    .quad 0x000600000
+    .quad 0x007000000
+    .quad 0x080000000
+    .quad 0x900000000
 
 
-# long move(long *src, long *dest, long len)
+#long move(long *dst, const long *src, long len)
 move:
 
-  rrmovq %rsi, %r10   # src_v = src;
-  rrmovq %rdi, %r11   # dst_v = dst;
-  xorq %rax, %rax 		# checksum = 0
-  irmovq $1, %r12     # step = 1;
-  irmovq $8, %r13     # elem_size = sizeof(long);
+	rrmovq %rsi, %r10   # src_v = src;
+	rrmovq %rdi, %r11   # dst_v = dst;
+	xorq %rax, %rax 	# checksum = 0
+	irmovq $8, %rcx     # step = 8;
+	irmovq $0, %r9      # elem_size = 0;
+	irmovq $1, %r13		# loop var r13 = 1
+	rrmovq %rdx, %r12 	# loop condition
+
+	subq %r11, %r10		# src_v = src_v - dst_v
+	jg while
+
+	rrmovq %rsi, %r10   	# src_v = src;
+
+
+	jmp testformult
+multiply:				# elem_size = 8*len
+	addq %rcx, %r9
+	subq %r13, %r12
+testformult:
+	andq %r12, %r12
+	jg multiply
+
+	addq %r9, %r10			# temp1 = src_v + elem_size*9
+	subq %r10, %r11			# temp2 = temp2 - temp1
+	jge while
 
 direction:
-  irmovq $1, %r14
 
-  subq %r14, %rdi
-  addq %rdx, %rdi     # src = src + len -1
-  subq %r14, %rsi
-  addq %rdx, %rsi     # dst = dst + len -1
+	xorq %r8, %r8
+	rrmovq %rdx, %r12
+	subq %r13, %r12
 
-  irmovq $0, %r12
-  subq %r14, %r12     # step = - 1
+jmp testformult2
+multiply2:
+	addq %rcx, %r8
+	subq %r13, %r12
+testformult2:
+	andq %r12, %r12
+	jg multiply2
+
+  	addq %r8, %rdi     # src = src + len -1
+  	addq %r8, %rsi     # dst = dst + len -1
+
+  	irmovq $-8, %rcx			# step = - 8
 
 while:
-  andq %rdx,%rdx			# test len
 	jmp test 				    # jump directly to test
 
 loop:
 
-	mrmovq (%rdi), %rcx 	# rcx = *src
-  xorq %rcx, %rax			  # checksum ^= rcx
+	mrmovq (%rsi), %r8 	# r8 = *src
+  	xorq %r8, %rax			  # checksum ^= r8
 
-  mrmovq (%rdi), %rcx   # rcx = *src
-  rmmovq %rcx, (%rsi)   # *dst = rcx
+  	mrmovq (%rsi), %r8   # r8 = *src
+  	rmmovq %r8, (%rdi)   # *dst = r8
 
-	addq %r12, %rsi      # src += step
-  addq %r12, %rdi      # dst += step
+	addq %rcx, %rsi      # src += step
+  	addq %rcx, %rdi      # dst += step
 	iaddq $-1, %rdx      # len--
 
 test:
+    andq %rdx,%rdx			# test len
 	jne loop 				# return loop if it's not 0
 	ret
 

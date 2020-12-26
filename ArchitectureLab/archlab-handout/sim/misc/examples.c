@@ -48,11 +48,11 @@ long move(long *dst, const long *src, long len)
     /* If we have an intersection like the following (len == 3):
            dst   src
            [ ][ ][ ][ ][ ]
-       Copying as usual, dst[i] = src[i] in a loop 0->end, is fine! 
+       Copying as usual, dst[i] = src[i] in a loop 0->end, is fine!
        But if we have it the other way around:
            src   dst
            [ ][ ][ ][ ][ ]
-       Copying as usual will overwrite src's own elements! 
+       Copying as usual will overwrite src's own elements!
        Have to copy from end->0. */
 
     /* Assume we're on 64-bit Linux and long is 8 bytes */
@@ -61,8 +61,8 @@ long move(long *dst, const long *src, long len)
     long src_v = (long) src;
     long checksum = 0;
     long step = 1;
-    long elem_size = sizeof(long); 
-
+    long elem_size = sizeof(long);
+    
     /* Default is forward, have to reverse if intersecting as shown above */
     if (src_v < dst_v && dst_v < src_v + elem_size * len) {
         /* Careful here! sizeof(long) * (len - 1) is added to dst and src */
