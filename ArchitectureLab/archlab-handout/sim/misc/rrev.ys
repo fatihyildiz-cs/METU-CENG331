@@ -1,4 +1,5 @@
-#Fatih YILDIZ 2306793
+#Fatih YILDIZ
+# 2306793
 # Execution begins at address 0
 .pos 0
   irmovq stack, %rsp      # set up stack pointer
@@ -48,5 +49,5 @@ done:
   ret
 
 # Stack starts here and grows to lower addresses
-  .pos 0x200
+  .pos 0x300
 stack:

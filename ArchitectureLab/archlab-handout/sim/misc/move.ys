@@ -1,3 +1,5 @@
+# Fatih YILDIZ
+# 2306793
 # Execution begins at address 0
 .pos 0
 	irmovq stack, %rsp  # Set up stack pointer
@@ -49,8 +51,8 @@ testformult:
 	andq %r12, %r12
 	jg multiply
 
-	addq %r9, %r10			# temp1 = src_v + elem_size*9
-	subq %r10, %r11			# temp2 = temp2 - temp1
+	addq %r9, %r10
+	subq %r10, %r11
 	jge while
 
 direction:
@@ -78,7 +80,7 @@ while:
 loop:
 
 	mrmovq (%rsi), %r8 	# r8 = *src
-  	xorq %r8, %rax			  # checksum ^= r8
+  	xorq %r8, %rax		# checksum ^= r8
 
   	mrmovq (%rsi), %r8   # r8 = *src
   	rmmovq %r8, (%rdi)   # *dst = r8

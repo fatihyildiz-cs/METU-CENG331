@@ -1,7 +1,8 @@
-                            | #Fatih YILDIZ 2306793
+                            | # Fatih YILDIZ
+                            | # 2306793
                             | # Execution begins at address 0
 0x000:                      | .pos 0
-0x000: 30f40002000000000000 |   irmovq stack, %rsp      # set up stack pointer
+0x000: 30f40003000000000000 |   irmovq stack, %rsp      # set up stack pointer
 0x00a: 30f70001000000000000 |   irmovq ele0, %rdi		    # set parameter
 0x014: 805001000000000000   |   call rev                # call rev(ele0)
 0x01d: 00                   |   halt                    # terminate program
@@ -40,9 +41,9 @@
                             | 
 0x173:                      | test:
 0x173: 6277                 |   andq %rdi, %rdi 		 # test loop variable (head)
-0x175: 745b01000000000000   |   jne    loop          # Stop when head==0
+0x175: 745b01000000000000   |   jne  loop            # Stop when head==0
 0x17e: 90                   |   ret                  # return prev (rax)
                             | 
                             | # Stack starts here and grows to lower addresses
-0x200:                      |   .pos 0x200
-0x200:                      | stack:
+0x300:                      |   .pos 0x300
+0x300:                      | stack:

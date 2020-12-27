@@ -1,4 +1,5 @@
-#Fatih YILDIZ 2306793
+# Fatih YILDIZ
+# 2306793
 # Execution begins at address 0
 .pos 0
   irmovq stack, %rsp      # set up stack pointer
@@ -40,9 +41,9 @@ loop:
 
 test:
   andq %rdi, %rdi 		 # test loop variable (head)
-  jne    loop          # Stop when head==0
+  jne  loop            # Stop when head==0
   ret                  # return prev (rax)
 
 # Stack starts here and grows to lower addresses
-  .pos 0x200
+  .pos 0x300
 stack:

@@ -28,8 +28,34 @@ StartFun:
 # Return the number of positive words (>0) contained in src.
 #
 # Include your name and ID here.
+# Fatih YILDIZ
+# 2306793
 #
 # Describe how and why you modified the baseline code.
+#
+# 	First of all, I changed the addition instruction to iaddq whenever applicable. This lowered my 
+# average cpe by 2-3.
+#
+# 	Since using the values fetched from the memory immediately leads to stalling,
+# I tried to write at least 1 operation before using the value. However, sometimes I couldn't avoid this 
+# because there were no operation to put between.
+#
+# 	I implemented loop unrolling in my function since loop overhead (checking the condition, jumping etc.)
+# causes extra cycles. I tried to go as high number of unrolling as possible but the code for factor 8
+# exceeded the 1000 memory limit. So I sticked with 7.
+#
+# 	With unrolling factor 7, when length => 7 my code goes into the loop where it copies 7 items at once. 
+# If the length is a multiple of 7, no need to account for the remainders, however, when
+# length % 7 != 0, we have to account for remainders. At first I tried to loop on the remainders
+# 1 by 1 till I get to the point where length == 0, however, this led to poor performance. Thus, I
+# constructed a jump table where the function gets the exact address of the execution steps to go over 
+# the remainders 1 by 1. This took me to about avg 8.03 cpe.
+# 	In order to implement the jump table functionality, I needed the JMPQ instruction. But I didn't have
+# it. Instead, I utilized the push&return instructions to go to the address that I want.
+# 	I also coded a special case when remainder == 6 because going 1 by 1 was slower. This took me to an
+# avg cpe of 8.00.
+#
+#
 #
 ##################################################################
 # Do not modify this portion
@@ -41,17 +67,15 @@ ncopy:
 # You can modify this portion
 	# Loop header
 	xorq %rax, %rax		# count = 0;
-	andq %rdx,%rdx		# len <= 0?
-	jle Done		# if len <= 0, go to Done
-	iaddq $-8, %rdx
-	jle remains	# if 0 < length <= 8, go to remains
-	# for 8 <= length, fall
+	iaddq $-7, %rdx
+	jl remains	# if 0 < length < 7, go to remains
+	# for 7 <= length, fall
 
 Loop:
 	mrmovq (%rdi), %r8	# r8 = first val
 	mrmovq 8(%rdi), %r9	# r9 = second val
 	mrmovq 16(%rdi), %r10	# r10 = third val
-	mrmovq 24(%rdi), %r11	# r11 = third val
+	mrmovq 24(%rdi), %r11	# r11 = fourth val
 
 	andq %r8, %r8	# check if first val is positive
 	jle cp1 				# if not pos, got to c1
@@ -60,8 +84,8 @@ Loop:
 cp1:
 	rmmovq %r8, (%rsi)	# write the first val
 	rmmovq %r9, 8(%rsi)	# write the second val
-	rmmovq %r10, 16(%rsi)	# write the second val
-	rmmovq %r11, 24(%rsi)	# write the second val
+	rmmovq %r10, 16(%rsi)	# write the third val
+	rmmovq %r11, 24(%rsi)	# write the fourth val
 
 	andq %r9, %r9	# check if second val is positive
 	jle cp2 # if not pos, go to cp2
@@ -81,7 +105,6 @@ cp4:
 	mrmovq 32(%rdi), %r8	# r8 = fifth val
 	mrmovq 40(%rdi), %r9	# r9 = sixth val
 	mrmovq 48(%rdi), %r10	# r10 = seventh val
-	mrmovq 56(%rdi), %r11	# r11 = eighth val
 
 	andq %r8, %r8	# check if fifth val is positive
 	jle cp5 				# if not pos, got to c1
@@ -91,7 +114,6 @@ cp5:
 	rmmovq %r8, 32(%rsi)	# write the fifth val
 	rmmovq %r9, 40(%rsi)	# write the sixth val
 	rmmovq %r10, 48(%rsi)	# write the seventh val
-	rmmovq %r11, 56(%rsi)	# write the eighth val
 
 	andq %r9, %r9	# check if sixth val is positive
 	jle cp6 # if not pos, go to cp2
@@ -99,144 +121,113 @@ cp5:
 
 cp6:
 	andq %r10, %r10	# check if seventh val is positive
-	jle cp7 # if not pos, go to cp2
-	iaddq $1, %rax  # else, increment rax
-
-cp7:
-	andq %r11, %r11	# check if eighth val is positive
 	jle inc # if not pos, go to cp2
 	iaddq $1, %rax  # else, increment rax
 
 inc:
-	iaddq $64, %rdi		# src += 64
-	iaddq $64, %rsi		# dst += 64
-	iaddq	$-8, %rdx
-	jg Loop			# if so, goto Loop:
+	iaddq $56, %rdi		# src += 56
+	iaddq $56, %rsi		# dst += 56
+	iaddq	$-7, %rdx
+	jge Loop			# if so, goto Loop:
 
 remains:
-	iaddq $8, %rdi
+	iaddq $7, %rdx #fall
 
 calculate:
 	addq %rdx, %rdx
 	addq %rdx, %rdx
 	addq %rdx, %rdx # rdx = 8*rdx
-	mrmovq JumpTable(%rdx), %r8 # r8 = *(JTableStart+8*size)
+	mrmovq JumpTable(%rdx), %r8 # r8 = *(JumpTable+8*size)
 	pushq %r8 # push the jump address
-	ret
+	ret	# jump to the calculated address
 
-lengthIs8:
-	mrmovq 56(%rdi), %r9  #8th element
-	rmmovq %r9, 56(%rsi)
-	andq %r9,%r9
-	jle lengthIs7
-	iaddq $1,%rax
+r6: # special case for remainder == 6.
+	mrmovq 40(%rdi), %r8
+	mrmovq 32(%rdi), %r9
+	mrmovq 24(%rdi), %r10
+	mrmovq 16(%rdi), %r11
+	mrmovq  8(%rdi), %r12
+	mrmovq   (%rdi), %r13
+	andq %r8, %r8
+	jle r6_1
+	iaddq $1, %rax
 
-lengthIs7:
-	mrmovq 40(%rdi), %r9  #6th element
-	andq %r9,%r9
-	rmmovq %r9, 40(%rsi)
-	mrmovq 48(%rdi), %r10 #7th element
-	jle control_7_1
-	iaddq $1,%rax
-control_7_1:
-	andq %r10,%r10
-	rmmovq %r10, 48(%rsi)
-	jle lengthIs5
-	iaddq $1,%rax
-
-lengthIs5:
-	mrmovq 24(%rdi), %r9  #4th element
-	andq %r9,%r9
-	rmmovq %r9, 24(%rsi)
-	mrmovq 32(%rdi), %r10 #5th element
-	jle control_5_1
-	iaddq $1,%rax
-control_5_1:
-	andq %r10,%r10
-	rmmovq %r10, 32(%rsi)
-	jle lengthIs3
-	iaddq $1,%rax
-
-lengthIs3:
-	mrmovq 16(%rdi), %r10 #3th element
-	andq %r10,%r10
-	rmmovq %r10, 16(%rsi)
-	mrmovq 8(%rdi), %r9  #2th element
-	jle control_3_1
-	iaddq $1,%rax
-control_3_1:
-	andq %r9,%r9
-	rmmovq %r9, 8(%rsi)
-	jle lengthIs1
-	iaddq $1,%rax
-	jmp lengthIs1
-
-lengthIs6:
-	mrmovq 32(%rdi), %r9  #5th element
-	andq %r9,%r9
+r6_1:
+	andq %r9, %r9
+	jle r6_2
+	iaddq $1, %rax
+r6_2:
+	andq %r10, %r10
+	jle r6_3
+	iaddq $1, %rax
+r6_3:
+	andq %r11, %r11
+	jle r6_4
+	iaddq $1, %rax
+r6_4:
+	andq %r12, %r12
+	jle r6_5
+	iaddq $1, %rax
+r6_5:
+	rmmovq %r8, 40(%rsi)
 	rmmovq %r9, 32(%rsi)
-	mrmovq 40(%rdi), %r10 #6th element
-	jle control_6_1
-	iaddq $1,%rax
-control_6_1:
-	andq %r10,%r10
-	rmmovq %r10, 40(%rsi)
-	jle lengthIs4
-	iaddq $1,%rax
+	rmmovq %r10, 24(%rsi)
+	rmmovq %r11, 16(%rsi)
+	rmmovq %r12, 8(%rsi)
+	rmmovq %r13, (%rsi)
 
-lengthIs4:
-	mrmovq 24(%rdi), %r9 #4th element
-	andq %r9,%r9
-	rmmovq %r9, 24(%rsi)
-	mrmovq 16(%rdi), %r10 #3th element
-	jle control_4_1
-	iaddq $1,%rax
-control_4_1:
-	andq %r10,%r10
-	rmmovq %r10, 16(%rsi)
-	jle lengthIs2
-	iaddq $1,%rax
-
-lengthIs2:
-	mrmovq 8(%rdi), %r9 #2th element
-	andq %r9,%r9
-	rmmovq %r9, 8(%rsi)
-	mrmovq (%rdi), %r10 #1th element
-	jle control_2_1
-	iaddq $1,%rax
-control_2_1:
-	andq %r10,%r10
-	rmmovq %r10, (%rsi)
+	andq %r13, %r13
 	jle Done
-	iaddq $1,%rax
+	iaddq $1, %rax
 	jmp Done
 
-lengthIs1:
-	mrmovq (%rdi), %r10 #1th element
-	andq %r10,%r10
+r5:
+	mrmovq 32(%rdi), %r10
+	rmmovq %r10, 32(%rsi)
+	andq %r10, %r10
+	jle r4
+	iaddq $1, %rax
+r4:
+	mrmovq 24(%rdi), %r10
+	rmmovq %r10, 24(%rsi)
+	andq %r10, %r10
+	jle r3
+	iaddq $1, %rax
+r3:
+	mrmovq 16(%rdi), %r10
+	rmmovq %r10, 16(%rsi)
+	andq %r10, %r10
+	jle r2
+	iaddq $1, %rax
+r2:
+	mrmovq 8(%rdi), %r10
+	rmmovq %r10, 8(%rsi)
+	andq %r10, %r10
+	jle r1
+	iaddq $1, %rax
+r1:
+	mrmovq (%rdi), %r10
 	rmmovq %r10, (%rsi)
+	andq %r10, %r10
 	jle Done
-	iaddq $1,%rax
+	iaddq $1, %rax
+	jmp Done
 
+	JumpTable:
+		.quad Done #if rdx (length) is 0, we finish the operation.
+		.quad r1
+		.quad r2
+		.quad r3
+		.quad r4
+		.quad r5
+		.quad r6
+	##################################################################
+	# Do not modify the following section of code
+	# Function epilogue.
+	Done:
+		ret
 
-##################################################################
-# Do not modify the following section of code
-# Function epilogue.
-Done:
-	ret
-
-.align 8
-JumpTable:
-	.quad Done #stored as 8 byte
-	.quad lengthIs1
-	.quad lengthIs2
-	.quad lengthIs3
-	.quad lengthIs4
-	.quad lengthIs5
-	.quad lengthIs6
-	.quad lengthIs7
-	.quad lengthIs8
-##################################################################
+	##################################################################
 # Keep the following label at the end of your function
 End:
 #/* $end ncopy-ys */
@@ -247,10 +238,10 @@ EndFun:
 ###############################
 	.align 8
 src:
-	.quad -1
-	.quad 2
-	.quad 3
-	.quad -4
+	.quad 1
+	.quad -2
+	.quad -3
+	.quad 4
 	.quad 0xbcdefa # This shouldn't get moved
 
 	.align 16

@@ -1,3 +1,5 @@
+                            | # Fatih YILDIZ
+                            | # 2306793
                             | # Execution begins at address 0
 0x000:                      | .pos 0
 0x000: 30f40004000000000000 | 	irmovq stack, %rsp  # Set up stack pointer
@@ -49,8 +51,8 @@
 0x188: 62cc                 | 	andq %r12, %r12
 0x18a: 768401000000000000   | 	jg multiply
                             | 
-0x193: 609a                 | 	addq %r9, %r10			# temp1 = src_v + elem_size*9
-0x195: 61ab                 | 	subq %r10, %r11			# temp2 = temp2 - temp1
+0x193: 609a                 | 	addq %r9, %r10
+0x195: 61ab                 | 	subq %r10, %r11
 0x197: 75cc01000000000000   | 	jge while
                             | 
 0x1a0:                      | direction:
@@ -78,7 +80,7 @@
 0x1d5:                      | loop:
                             | 
 0x1d5: 50860000000000000000 | 	mrmovq (%rsi), %r8 	# r8 = *src
-0x1df: 6380                 |   	xorq %r8, %rax			  # checksum ^= r8
+0x1df: 6380                 |   	xorq %r8, %rax		# checksum ^= r8
                             | 
 0x1e1: 50860000000000000000 |   	mrmovq (%rsi), %r8   # r8 = *src
 0x1eb: 40870000000000000000 |   	rmmovq %r8, (%rdi)   # *dst = r8

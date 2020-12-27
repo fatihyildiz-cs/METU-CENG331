@@ -4,8 +4,34 @@
 # Return the number of positive words (>0) contained in src.
 #
 # Include your name and ID here.
+# Fatih YILDIZ
+# 2306793
 #
 # Describe how and why you modified the baseline code.
+#
+# 	First of all, I changed the addition instruction to iaddq whenever applicable. This lowered my 
+# average cpe by 2-3.
+#
+# 	Since using the values fetched from the memory immediately leads to stalling,
+# I tried to write at least 1 operation before using the value. However, sometimes I couldn't avoid this 
+# because there were no operation to put between.
+#
+# 	I implemented loop unrolling in my function since loop overhead (checking the condition, jumping etc.)
+# causes extra cycles. I tried to go as high number of unrolling as possible but the code for factor 8
+# exceeded the 1000 memory limit. So I sticked with 7.
+#
+# 	With unrolling factor 7, when length => 7 my code goes into the loop where it copies 7 items at once. 
+# If the length is a multiple of 7, no need to account for the remainders, however, when
+# length % 7 != 0, we have to account for remainders. At first I tried to loop on the remainders
+# 1 by 1 till I get to the point where length == 0, however, this led to poor performance. Thus, I
+# constructed a jump table where the function gets the exact address of the execution steps to go over 
+# the remainders 1 by 1. This took me to about avg 8.03 cpe.
+# 	In order to implement the jump table functionality, I needed the JMPQ instruction. But I didn't have
+# it. Instead, I utilized the push&return instructions to go to the address that I want.
+# 	I also coded a special case when remainder == 6 because going 1 by 1 was slower. This took me to an
+# avg cpe of 8.00.
+#
+#
 #
 ##################################################################
 # Do not modify this portion
@@ -18,14 +44,14 @@ ncopy:
 	# Loop header
 	xorq %rax, %rax		# count = 0;
 	iaddq $-7, %rdx
-	jl remains	# if 0 < length < 8, go to remains
-	# for 8 <= length, fall
+	jl remains	# if 0 < length < 7, go to remains
+	# for 7 <= length, fall
 
 Loop:
 	mrmovq (%rdi), %r8	# r8 = first val
 	mrmovq 8(%rdi), %r9	# r9 = second val
 	mrmovq 16(%rdi), %r10	# r10 = third val
-	mrmovq 24(%rdi), %r11	# r11 = third val
+	mrmovq 24(%rdi), %r11	# r11 = fourth val
 
 	andq %r8, %r8	# check if first val is positive
 	jle cp1 				# if not pos, got to c1
@@ -34,8 +60,8 @@ Loop:
 cp1:
 	rmmovq %r8, (%rsi)	# write the first val
 	rmmovq %r9, 8(%rsi)	# write the second val
-	rmmovq %r10, 16(%rsi)	# write the second val
-	rmmovq %r11, 24(%rsi)	# write the second val
+	rmmovq %r10, 16(%rsi)	# write the third val
+	rmmovq %r11, 24(%rsi)	# write the fourth val
 
 	andq %r9, %r9	# check if second val is positive
 	jle cp2 # if not pos, go to cp2
@@ -81,22 +107,56 @@ inc:
 	jge Loop			# if so, goto Loop:
 
 remains:
-	iaddq $7, %rdx
+	iaddq $7, %rdx #fall
 
 calculate:
 	addq %rdx, %rdx
 	addq %rdx, %rdx
 	addq %rdx, %rdx # rdx = 8*rdx
-	mrmovq JumpTable(%rdx), %r8 # r8 = *(JTableStart+8*size)
+	mrmovq JumpTable(%rdx), %r8 # r8 = *(JumpTable+8*size)
 	pushq %r8 # push the jump address
-	ret
+	ret	# jump to the calculated address
 
-r6:
-	mrmovq 40(%rdi), %r10
-	rmmovq %r10, 40(%rsi)
-	andq %r10, %r10
-	jle r5
+r6: # special case for remainder == 6.
+	mrmovq 40(%rdi), %r8
+	mrmovq 32(%rdi), %r9
+	mrmovq 24(%rdi), %r10
+	mrmovq 16(%rdi), %r11
+	mrmovq  8(%rdi), %r12
+	mrmovq   (%rdi), %r13
+	andq %r8, %r8
+	jle r6_1
 	iaddq $1, %rax
+
+r6_1:
+	andq %r9, %r9
+	jle r6_2
+	iaddq $1, %rax
+r6_2:
+	andq %r10, %r10
+	jle r6_3
+	iaddq $1, %rax
+r6_3:
+	andq %r11, %r11
+	jle r6_4
+	iaddq $1, %rax
+r6_4:
+	andq %r12, %r12
+	jle r6_5
+	iaddq $1, %rax
+r6_5:
+	rmmovq %r8, 40(%rsi)
+	rmmovq %r9, 32(%rsi)
+	rmmovq %r10, 24(%rsi)
+	rmmovq %r11, 16(%rsi)
+	rmmovq %r12, 8(%rsi)
+	rmmovq %r13, (%rsi)
+
+	andq %r13, %r13
+	jle Done
+	iaddq $1, %rax
+	jmp Done
+
 r5:
 	mrmovq 32(%rdi), %r10
 	rmmovq %r10, 32(%rsi)
@@ -130,7 +190,7 @@ r1:
 	jmp Done
 
 	JumpTable:
-		.quad Done #stored as 8 byte
+		.quad Done #if rdx (length) is 0, we finish the operation.
 		.quad r1
 		.quad r2
 		.quad r3
