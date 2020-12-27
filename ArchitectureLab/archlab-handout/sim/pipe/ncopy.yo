@@ -16,99 +16,174 @@
                             | ##################################################################
                             | # You can modify this portion
                             | 	# Loop header
-0x000: 6300                 | 	xorq %rax,%rax		# count = 0;
-0x002: 6222                 | 	andq %rdx,%rdx		# len <= 0?
-0x004: 71ce01000000000000   | 	jle Done		# if so, goto Done:
-0x00d: c0f2feffffffffffffff | 	iaddq $-2, %rdx
-0x017: 729101000000000000   | 	jl leftOvers
+0x000: 6300                 | 	xorq %rax, %rax		# count = 0;
+0x002: c0f2f9ffffffffffffff | 	iaddq $-7, %rdx
+0x00c: 725b01000000000000   | 	jl remains	# if 0 < length < 8, go to remains
+                            | 	# for 8 <= length, fall
                             | 
-0x020:                      | Loop:
-0x020: c0f2f8ffffffffffffff | 	iaddq $-8, %rdx			# len -= 8
-0x02a: 50870000000000000000 | 	mrmovq (%rdi), %r8	# r10 = first val
-0x034: 50970800000000000000 | 	mrmovq 8(%rdi), %r9	# r11 = second val
-0x03e: 50a71000000000000000 | 	mrmovq 16(%rdi), %r10	# r12 = third val
-0x048: 50b71800000000000000 | 	mrmovq 24(%rdi), %r11	# r12 = third val
+0x015:                      | Loop:
+0x015: 50870000000000000000 | 	mrmovq (%rdi), %r8	# r8 = first val
+0x01f: 50970800000000000000 | 	mrmovq 8(%rdi), %r9	# r9 = second val
+0x029: 50a71000000000000000 | 	mrmovq 16(%rdi), %r10	# r10 = third val
+0x033: 50b71800000000000000 | 	mrmovq 24(%rdi), %r11	# r11 = third val
                             | 
-0x052: 6288                 | 	andq %r8, %r8	# check if first val is positive
-0x054: 716700000000000000   | 	jle cp1 				# if not pos, got to c1
-0x05d: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+0x03d: 6288                 | 	andq %r8, %r8	# check if first val is positive
+0x03f: 715200000000000000   | 	jle cp1 				# if not pos, got to c1
+0x048: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
                             | 
-0x067:                      | cp1:
-0x067: 40860000000000000000 | 	rmmovq %r8, (%rsi)	# write the first val
-0x071: 40960800000000000000 | 	rmmovq %r9, 8(%rsi)	# write the second val
-0x07b: 40a61000000000000000 | 	rmmovq %r10, 16(%rsi)	# write the second val
-0x085: 40b61800000000000000 | 	rmmovq %r11, 24(%rsi)	# write the second val
+0x052:                      | cp1:
+0x052: 40860000000000000000 | 	rmmovq %r8, (%rsi)	# write the first val
+0x05c: 40960800000000000000 | 	rmmovq %r9, 8(%rsi)	# write the second val
+0x066: 40a61000000000000000 | 	rmmovq %r10, 16(%rsi)	# write the second val
+0x070: 40b61800000000000000 | 	rmmovq %r11, 24(%rsi)	# write the second val
                             | 
-0x08f: 6299                 | 	andq %r9, %r9	# check if second val is positive
-0x091: 71a400000000000000   | 	jle cp2 # if not pos, go to cp2
+0x07a: 6299                 | 	andq %r9, %r9	# check if second val is positive
+0x07c: 718f00000000000000   | 	jle cp2 # if not pos, go to cp2
+0x085: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+                            | 
+0x08f:                      | cp2:
+0x08f: 62aa                 | 	andq %r10, %r10	# check if third val is positive
+0x091: 71a400000000000000   | 	jle cp3 # if not pos, go to cp3
 0x09a: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
                             | 
-0x0a4:                      | cp2:
-0x0a4: 62aa                 | 	andq %r10, %r10	# check if third val is positive
-0x0a6: 71b900000000000000   | 	jle cp3 # if not pos, go to cp3
+0x0a4:                      | cp3:
+0x0a4: 62bb                 | 	andq %r11, %r11	# check if fourth val is positive
+0x0a6: 71b900000000000000   | 	jle cp4 # if not pos, go to cp3
 0x0af: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
                             | 
-0x0b9:                      | cp3:
-0x0b9: 50872000000000000000 | 	mrmovq 32(%rdi), %r8	# r10 = fifth val
-0x0c3: 50972800000000000000 | 	mrmovq 40(%rdi), %r9	# r11 = sixth val
-0x0cd: 50a73000000000000000 | 	mrmovq 48(%rdi), %r10	# r12 = seventh val
-0x0d7: 50b73800000000000000 | 	mrmovq 56(%rdi), %r11	# r12 = eighth val
-0x0e1: 62bb                 | 	andq %r11, %r11	# check if fourth val is positive
-0x0e3: 71f600000000000000   | 	jle cp4 # if not pos, go to cp3
-0x0ec: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+0x0b9:                      | cp4:
+0x0b9: 50872000000000000000 | 	mrmovq 32(%rdi), %r8	# r8 = fifth val
+0x0c3: 50972800000000000000 | 	mrmovq 40(%rdi), %r9	# r9 = sixth val
+0x0cd: 50a73000000000000000 | 	mrmovq 48(%rdi), %r10	# r10 = seventh val
                             | 
-0x0f6:                      | cp4:
-0x0f6: 40862000000000000000 | 	rmmovq %r8, 32(%rsi)	# write the fifth val
-0x100: 40962800000000000000 | 	rmmovq %r9, 40(%rsi)	# write the sixth val
-0x10a: 40a63000000000000000 | 	rmmovq %r10, 48(%rsi)	# write the seventh val
-0x114: 40b63800000000000000 | 	rmmovq %r11, 56(%rsi)	# write the eighth val
-0x11e: 6288                 | 	andq %r8, %r8	# check if fifth val is positive
-0x120: 713301000000000000   | 	jle cp5 				# if not pos, got to c1
-0x129: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+0x0d7: 6288                 | 	andq %r8, %r8	# check if fifth val is positive
+0x0d9: 71ec00000000000000   | 	jle cp5 				# if not pos, got to c1
+0x0e2: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
                             | 
-0x133:                      | cp5:
-0x133: 6299                 | 	andq %r9, %r9	# check if sixth val is positive
-0x135: 714801000000000000   | 	jle cp6 # if not pos, go to cp2
-0x13e: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+0x0ec:                      | cp5:
+0x0ec: 40862000000000000000 | 	rmmovq %r8, 32(%rsi)	# write the fifth val
+0x0f6: 40962800000000000000 | 	rmmovq %r9, 40(%rsi)	# write the sixth val
+0x100: 40a63000000000000000 | 	rmmovq %r10, 48(%rsi)	# write the seventh val
                             | 
-0x148:                      | cp6:
-0x148: 62aa                 | 	andq %r10, %r10	# check if seventh val is positive
-0x14a: 715d01000000000000   | 	jle cp7 # if not pos, go to cp2
-0x153: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+0x10a: 6299                 | 	andq %r9, %r9	# check if sixth val is positive
+0x10c: 711f01000000000000   | 	jle cp6 # if not pos, go to cp2
+0x115: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
                             | 
-0x15d:                      | cp7:
-0x15d: 62bb                 | 	andq %r11, %r11	# check if eighth val is positive
-0x15f: 717201000000000000   | 	jle cp8 # if not pos, go to cp2
-0x168: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+0x11f:                      | cp6:
+0x11f: 62aa                 | 	andq %r10, %r10	# check if seventh val is positive
+0x121: 713401000000000000   | 	jle inc # if not pos, go to cp2
+0x12a: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+                            | 
+0x134:                      | inc:
+0x134: c0f73800000000000000 | 	iaddq $56, %rdi		# src += 64
+0x13e: c0f63800000000000000 | 	iaddq $56, %rsi		# dst += 64
+0x148: c0f2f9ffffffffffffff | 	iaddq	$-7, %rdx
+0x152: 751500000000000000   | 	jge Loop			# if so, goto Loop:
+                            | 
+0x15b:                      | remains:
+0x15b: c0f20700000000000000 | 	iaddq $7, %rdx
+                            | 
+0x165:                      | calculate:
+0x165: 6022                 | 	addq %rdx, %rdx
+0x167: 6022                 | 	addq %rdx, %rdx
+0x169: 6022                 | 	addq %rdx, %rdx # rdx = 8*rdx
+0x16b: 50824e03000000000000 | 	mrmovq JumpTable(%rdx), %r8 # r8 = *(JTableStart+8*size)
+0x175: a08f                 | 	pushq %r8 # push the jump address
+0x177: 90                   | 	ret
+                            | 
+0x178:                      | 	lengthIs5:
+0x178: 50971800000000000000 | 		mrmovq 24(%rdi), %r9  #4th element
+0x182: 6299                 | 		andq %r9,%r9
+0x184: 40961800000000000000 | 		rmmovq %r9, 24(%rsi)
+0x18e: 50a72000000000000000 | 		mrmovq 32(%rdi), %r10 #5th element
+0x198: 71ab01000000000000   | 		jle control_5_1
+0x1a1: c0f00100000000000000 | 		iaddq $1,%rax
+0x1ab:                      | 	control_5_1:
+0x1ab: 62aa                 | 		andq %r10,%r10
+0x1ad: 40a62000000000000000 | 		rmmovq %r10, 32(%rsi)
+0x1b7: 71ca01000000000000   | 		jle lengthIs3
+0x1c0: c0f00100000000000000 | 		iaddq $1,%rax
+                            | 
+0x1ca:                      | 	lengthIs3:
+0x1ca: 50a71000000000000000 | 		mrmovq 16(%rdi), %r10 #3th element
+0x1d4: 62aa                 | 		andq %r10,%r10
+0x1d6: 40a61000000000000000 | 		rmmovq %r10, 16(%rsi)
+0x1e0: 50970800000000000000 | 		mrmovq 8(%rdi), %r9  #2th element
+0x1ea: 71fd01000000000000   | 		jle control_3_1
+0x1f3: c0f00100000000000000 | 		iaddq $1,%rax
+0x1fd:                      | 	control_3_1:
+0x1fd: 6299                 | 		andq %r9,%r9
+0x1ff: 40960800000000000000 | 		rmmovq %r9, 8(%rsi)
+0x209: 712403000000000000   | 		jle lengthIs1
+0x212: c0f00100000000000000 | 		iaddq $1,%rax
+0x21c: 702403000000000000   | 		jmp lengthIs1
+                            | 
+0x225:                      | 	lengthIs6:
+0x225: 50972000000000000000 | 		mrmovq 32(%rdi), %r9  #5th element
+0x22f: 6299                 | 		andq %r9,%r9
+0x231: 40962000000000000000 | 		rmmovq %r9, 32(%rsi)
+0x23b: 50a72800000000000000 | 		mrmovq 40(%rdi), %r10 #6th element
+0x245: 715802000000000000   | 		jle control_6_1
+0x24e: c0f00100000000000000 | 		iaddq $1,%rax
+0x258:                      | 	control_6_1:
+0x258: 62aa                 | 		andq %r10,%r10
+0x25a: 40a62800000000000000 | 		rmmovq %r10, 40(%rsi)
+0x264: 717702000000000000   | 		jle lengthIs4
+0x26d: c0f00100000000000000 | 		iaddq $1,%rax
+                            | 
+0x277:                      | 	lengthIs4:
+0x277: 50971800000000000000 | 		mrmovq 24(%rdi), %r9 #4th element
+0x281: 6299                 | 		andq %r9,%r9
+0x283: 40961800000000000000 | 		rmmovq %r9, 24(%rsi)
+0x28d: 50a71000000000000000 | 		mrmovq 16(%rdi), %r10 #3th element
+0x297: 71aa02000000000000   | 		jle control_4_1
+0x2a0: c0f00100000000000000 | 		iaddq $1,%rax
+0x2aa:                      | 	control_4_1:
+0x2aa: 62aa                 | 		andq %r10,%r10
+0x2ac: 40a61000000000000000 | 		rmmovq %r10, 16(%rsi)
+0x2b6: 71c902000000000000   | 		jle lengthIs2
+0x2bf: c0f00100000000000000 | 		iaddq $1,%rax
+                            | 
+0x2c9:                      | 	lengthIs2:
+0x2c9: 50970800000000000000 | 		mrmovq 8(%rdi), %r9 #2th element
+0x2d3: 6299                 | 		andq %r9,%r9
+0x2d5: 40960800000000000000 | 		rmmovq %r9, 8(%rsi)
+0x2df: 50a70000000000000000 | 		mrmovq (%rdi), %r10 #1th element
+0x2e9: 71fc02000000000000   | 		jle control_2_1
+0x2f2: c0f00100000000000000 | 		iaddq $1,%rax
+0x2fc:                      | 	control_2_1:
+0x2fc: 62aa                 | 		andq %r10,%r10
+0x2fe: 40a60000000000000000 | 		rmmovq %r10, (%rsi)
+0x308: 714d03000000000000   | 		jle Done
+0x311: c0f00100000000000000 | 		iaddq $1,%rax
+0x31b: 704d03000000000000   | 		jmp Done
+                            | 
+0x324:                      | 	lengthIs1:
+0x324: 50a70000000000000000 | 		mrmovq (%rdi), %r10 #1th element
+0x32e: 62aa                 | 		andq %r10,%r10
+0x330: 40a60000000000000000 | 		rmmovq %r10, (%rsi)
+0x33a: 714d03000000000000   | 		jle Done
+0x343: c0f00100000000000000 | 		iaddq $1,%rax
                             | 
                             | 
-0x172:                      | cp8:
+                            | 	##################################################################
+                            | 	# Do not modify the following section of code
+                            | 	# Function epilogue.
+0x34d:                      | 	Done:
+0x34d: 90                   | 		ret
                             | 
-0x172: c0f74000000000000000 | 	iaddq $64, %rdi		# src += 64
-0x17c: c0f64000000000000000 | 	iaddq $64, %rsi		# dst += 64
-0x186: 6222                 | 	andq %rdx,%rdx		# len > 0?
-0x188: 762000000000000000   | 	jg Loop			# if so, goto Loop:
                             | 
+                            | 	#.align 8 #Address of jump table will start at multiply of 8
+0x34e:                      | 	JumpTable:
+0x34e: 4d03000000000000     | 		.quad Done #stored as 8 byte
+0x356: 2403000000000000     | 		.quad lengthIs1
+0x35e: c902000000000000     | 		.quad lengthIs2
+0x366: ca01000000000000     | 		.quad lengthIs3
+0x36e: 7702000000000000     | 		.quad lengthIs4
+0x376: 7801000000000000     | 		.quad lengthIs5
+0x37e: 2502000000000000     | 		.quad lengthIs6
                             | 
-0x191:                      | leftOvers:
-                            | 	#jl lastTouches
-0x191: 50a70000000000000000 | 	mrmovq (%rdi), %r10
-0x19b: c0f70800000000000000 | 	iaddq $8, %rdi		# src++
-0x1a5: 40a60000000000000000 | 	rmmovq %r10, (%rsi)
-0x1af: c0f60800000000000000 | 	iaddq $8, %rsi		# dst++
-0x1b9: 62aa                 | 	andq %r10, %r10
-0x1bb: 71ce01000000000000   | 	jle Done
-0x1c4: c0f00100000000000000 | 	iaddq $1, %rax
-                            | 
-0x1ce:                      | lastTouches:
-                            | 	#iaddq $1, %rdx
-                            | 
-                            | ##################################################################
-                            | # Do not modify the following section of code
-                            | # Function epilogue.
-0x1ce:                      | Done:
-0x1ce: 90                   | 	ret
-                            | ##################################################################
+                            | 	##################################################################
                             | # Keep the following label at the end of your function
-0x1cf:                      | End:
+0x386:                      | End:
                             | #/* $end ncopy-ys */

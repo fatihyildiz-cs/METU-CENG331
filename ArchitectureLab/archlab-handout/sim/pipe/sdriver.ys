@@ -40,11 +40,11 @@ ncopy:
 ##################################################################
 # You can modify this portion
 	# Loop header
-	irmovq $0, %rax		# count = 0;
+	xorq %rax, %rax		# count = 0;
 	andq %rdx,%rdx		# len <= 0?
 	jle Done		# if len <= 0, go to Done
 	iaddq $-8, %rdx
-	jl thereAreLeftovers	# if 0 < length < 8, go to leftOvers
+	jle remains	# if 0 < length <= 8, go to remains
 	# for 8 <= length, fall
 
 Loop:
@@ -86,7 +86,7 @@ cp4:
 	andq %r8, %r8	# check if fifth val is positive
 	jle cp5 				# if not pos, got to c1
 	iaddq $1, %rax  # else, increment rax
-	
+
 cp5:
 	rmmovq %r8, 32(%rsi)	# write the fifth val
 	rmmovq %r9, 40(%rsi)	# write the sixth val
@@ -111,80 +111,112 @@ inc:
 	iaddq $64, %rdi		# src += 64
 	iaddq $64, %rsi		# dst += 64
 	iaddq	$-8, %rdx
-	jge Loop			# if so, goto Loop:
+	jg Loop			# if so, goto Loop:
 
-thereAreLeftovers:
-	iaddq $7, %rdx
+remains:
+	iaddq $8, %rdi
 
-r1:
-	jl Done
-	mrmovq (%rdi), %r10
-	iaddq $8, %rdi		# src++
+calculate:
+	addq %rdx, %rdx
+	addq %rdx, %rdx
+	addq %rdx, %rdx # rdx = 8*rdx
+	mrmovq JumpTable(%rdx), %r8 # r8 = *(JTableStart+8*size)
+	pushq %r8 # push the jump address
+	ret
+
+lengthIs8:
+	mrmovq 56(%rdi), %r9  #8th element
+	rmmovq %r9, 56(%rsi)
+	andq %r9,%r9
+	jle lengthIs7
+	iaddq $1,%rax
+
+lengthIs7:
+	mrmovq 40(%rdi), %r9  #6th element
+	andq %r9,%r9
+	rmmovq %r9, 40(%rsi)
+	mrmovq 48(%rdi), %r10 #7th element
+	jle control_7_1
+	iaddq $1,%rax
+control_7_1:
+	andq %r10,%r10
+	rmmovq %r10, 48(%rsi)
+	jle lengthIs5
+	iaddq $1,%rax
+
+lengthIs5:
+	mrmovq 24(%rdi), %r9  #4th element
+	andq %r9,%r9
+	rmmovq %r9, 24(%rsi)
+	mrmovq 32(%rdi), %r10 #5th element
+	jle control_5_1
+	iaddq $1,%rax
+control_5_1:
+	andq %r10,%r10
+	rmmovq %r10, 32(%rsi)
+	jle lengthIs3
+	iaddq $1,%rax
+
+lengthIs3:
+	mrmovq 16(%rdi), %r10 #3th element
+	andq %r10,%r10
+	rmmovq %r10, 16(%rsi)
+	mrmovq 8(%rdi), %r9  #2th element
+	jle control_3_1
+	iaddq $1,%rax
+control_3_1:
+	andq %r9,%r9
+	rmmovq %r9, 8(%rsi)
+	jle lengthIs1
+	iaddq $1,%rax
+	jmp lengthIs1
+
+lengthIs6:
+	mrmovq 32(%rdi), %r9  #5th element
+	andq %r9,%r9
+	rmmovq %r9, 32(%rsi)
+	mrmovq 40(%rdi), %r10 #6th element
+	jle control_6_1
+	iaddq $1,%rax
+control_6_1:
+	andq %r10,%r10
+	rmmovq %r10, 40(%rsi)
+	jle lengthIs4
+	iaddq $1,%rax
+
+lengthIs4:
+	mrmovq 24(%rdi), %r9 #4th element
+	andq %r9,%r9
+	rmmovq %r9, 24(%rsi)
+	mrmovq 16(%rdi), %r10 #3th element
+	jle control_4_1
+	iaddq $1,%rax
+control_4_1:
+	andq %r10,%r10
+	rmmovq %r10, 16(%rsi)
+	jle lengthIs2
+	iaddq $1,%rax
+
+lengthIs2:
+	mrmovq 8(%rdi), %r9 #2th element
+	andq %r9,%r9
+	rmmovq %r9, 8(%rsi)
+	mrmovq (%rdi), %r10 #1th element
+	jle control_2_1
+	iaddq $1,%rax
+control_2_1:
+	andq %r10,%r10
 	rmmovq %r10, (%rsi)
-	iaddq $8, %rsi		# dst++
-	andq %r10, %r10
-	jle r2
-	iaddq $1, %rax
-r2:
-	iaddq  $-1, %rdx       # len--
-	jl Done
-	mrmovq (%rdi), %r10
-	iaddq $8, %rdi		# src++
-	rmmovq %r10, (%rsi)
-	iaddq $8, %rsi		# dst++
-	andq %r10, %r10
-	jle r3
-	iaddq $1, %rax
-r3:
-	iaddq  $-1, %rdx       # len--
-	jl Done
-	mrmovq (%rdi), %r10
-	iaddq $8, %rdi		# src++
-	rmmovq %r10, (%rsi)
-	iaddq $8, %rsi		# dst++
-	andq %r10, %r10
-	jle r4
-	iaddq $1, %rax
-r4:
-	iaddq  $-1, %rdx       # len--
-	jl Done
-	mrmovq (%rdi), %r10
-	iaddq $8, %rdi		# src++
-	rmmovq %r10, (%rsi)
-	iaddq $8, %rsi		# dst++
-	andq %r10, %r10
-	jle r5
-	iaddq $1, %rax
-r5:
-	iaddq  $-1, %rdx       # len--
-	jl Done
-	mrmovq (%rdi), %r10
-	iaddq $8, %rdi		# src++
-	rmmovq %r10, (%rsi)
-	iaddq $8, %rsi		# dst++
-	andq %r10, %r10
-	jle r6
-	iaddq $1, %rax
-r6:
-	iaddq  $-1, %rdx       # len--
-	jl Done
-	mrmovq (%rdi), %r10
-	iaddq $8, %rdi		# src++
-	rmmovq %r10, (%rsi)
-	iaddq $8, %rsi		# dst++
-	andq %r10, %r10
-	jle r7
-	iaddq $1, %rax
-r7:
-	iaddq  $-1, %rdx       # len--
-	jl Done
-	mrmovq (%rdi), %r10
-	iaddq $8, %rdi		# src++
-	rmmovq %r10, (%rsi)
-	iaddq $8, %rsi		# dst++
-	andq %r10, %r10
 	jle Done
-	iaddq $1, %rax
+	iaddq $1,%rax
+	jmp Done
+
+lengthIs1:
+	mrmovq (%rdi), %r10 #1th element
+	andq %r10,%r10
+	rmmovq %r10, (%rsi)
+	jle Done
+	iaddq $1,%rax
 
 
 ##################################################################
@@ -192,6 +224,18 @@ r7:
 # Function epilogue.
 Done:
 	ret
+
+.align 8
+JumpTable:
+	.quad Done #stored as 8 byte
+	.quad lengthIs1
+	.quad lengthIs2
+	.quad lengthIs3
+	.quad lengthIs4
+	.quad lengthIs5
+	.quad lengthIs6
+	.quad lengthIs7
+	.quad lengthIs8
 ##################################################################
 # Keep the following label at the end of your function
 End:

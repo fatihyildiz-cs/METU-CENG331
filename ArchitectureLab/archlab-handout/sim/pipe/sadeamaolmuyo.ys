@@ -17,8 +17,10 @@ ncopy:
 # You can modify this portion
 	# Loop header
 	xorq %rax, %rax		# count = 0;
-	iaddq $-7, %rdx
-	jl remains	# if 0 < length < 8, go to remains
+	andq %rdx,%rdx		# len <= 0?
+	jle Done		# if len <= 0, go to Done
+	iaddq $-8, %rdx
+	jle remains	# if 0 < length <= 8, go to remains
 	# for 8 <= length, fall
 
 Loop:
@@ -55,6 +57,7 @@ cp4:
 	mrmovq 32(%rdi), %r8	# r8 = fifth val
 	mrmovq 40(%rdi), %r9	# r9 = sixth val
 	mrmovq 48(%rdi), %r10	# r10 = seventh val
+	mrmovq 56(%rdi), %r11	# r11 = eighth val
 
 	andq %r8, %r8	# check if fifth val is positive
 	jle cp5 				# if not pos, got to c1
@@ -64,6 +67,7 @@ cp5:
 	rmmovq %r8, 32(%rsi)	# write the fifth val
 	rmmovq %r9, 40(%rsi)	# write the sixth val
 	rmmovq %r10, 48(%rsi)	# write the seventh val
+	rmmovq %r11, 56(%rsi)	# write the eighth val
 
 	andq %r9, %r9	# check if sixth val is positive
 	jle cp6 # if not pos, go to cp2
@@ -71,26 +75,43 @@ cp5:
 
 cp6:
 	andq %r10, %r10	# check if seventh val is positive
+	jle cp7 # if not pos, go to cp2
+	iaddq $1, %rax  # else, increment rax
+
+cp7:
+	andq %r11, %r11	# check if eighth val is positive
 	jle inc # if not pos, go to cp2
 	iaddq $1, %rax  # else, increment rax
 
 inc:
-	iaddq $56, %rdi		# src += 56
-	iaddq $56, %rsi		# dst += 56
-	iaddq	$-7, %rdx
-	jge Loop			# if so, goto Loop:
+	iaddq $64, %rdi		# src += 64
+	iaddq $64, %rsi		# dst += 64
+	iaddq	$-8, %rdx
+	jg Loop			# if so, goto Loop:
 
 remains:
-	iaddq $7, %rdx
+	iaddq $8, %rdi
 
 calculate:
 	addq %rdx, %rdx
 	addq %rdx, %rdx
 	addq %rdx, %rdx # rdx = 8*rdx
-	mrmovq JumpTable(%rdx), %r8 # r8 = *(JTableStart+8*size)
+	mrmovq JTableStart(%rdx), %r8 # r8 = *(JTableStart+8*size)
 	pushq %r8 # push the jump address
 	ret
 
+r8:
+	mrmovq 56(%rdi), %r10
+	rmmovq %r10, 56(%rsi)
+	andq %r10, %r10
+	jle r6
+	iaddq $1, %rax
+r7:
+	mrmovq 48(%rdi), %r10
+	rmmovq %r10, 48(%rsi)
+	andq %r10, %r10
+	jle r6
+	iaddq $1, %rax
 r6:
 	mrmovq 40(%rdi), %r10
 	rmmovq %r10, 40(%rsi)
@@ -127,23 +148,26 @@ r1:
 	andq %r10, %r10
 	jle Done
 	iaddq $1, %rax
-	jmp Done
 
-	JumpTable:
-		.quad Done #stored as 8 byte
-		.quad r1
-		.quad r2
-		.quad r3
-		.quad r4
-		.quad r5
-		.quad r6
-	##################################################################
-	# Do not modify the following section of code
-	# Function epilogue.
-	Done:
-		ret
 
-	##################################################################
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+
+.align 8
+JTableStart:
+	.quad Done
+	.quad r1
+	.quad r2
+	.quad r3
+	.quad r4
+	.quad r5
+	.quad r6
+	.quad r7
+	.quad r8
+##################################################################
 # Keep the following label at the end of your function
 End:
 #/* $end ncopy-ys */
