@@ -36,7 +36,7 @@
 0x16c: 202c                 | 	rrmovq %rdx, %r12 	# loop condition
                             | 
 0x16e: 61ba                 | 	subq %r11, %r10		# src_v = src_v - dst_v
-0x170: 76cc01000000000000   | 	jg while
+0x170: 75cc01000000000000   | 	jge while
                             | 
 0x179: 206a                 | 	rrmovq %rsi, %r10   	# src_v = src;
                             | 
@@ -73,7 +73,7 @@
 0x1c2: 30f1f8ffffffffffffff |   	irmovq $-8, %rcx			# step = - 8
                             | 
 0x1cc:                      | while:
-0x1cc: 700302000000000000   | 	jmp test 				    # jump directly to test
+0x1cc: 70fb01000000000000   | 	jmp test 				    # jump directly to test
                             | 
 0x1d5:                      | loop:
                             | 
@@ -85,12 +85,12 @@
                             | 
 0x1f5: 6016                 | 	addq %rcx, %rsi      # src += step
 0x1f7: 6017                 |   	addq %rcx, %rdi      # dst += step
-0x1f9: c0f2ffffffffffffffff | 	iaddq $-1, %rdx      # len--
+0x1f9: 61d2                 | 	subq %r13, %rdx      # len--
                             | 
-0x203:                      | test:
-0x203: 6222                 |     andq %rdx,%rdx			# test len
-0x205: 74d501000000000000   | 	jne loop 				# return loop if it's not 0
-0x20e: 90                   | 	ret
+0x1fb:                      | test:
+0x1fb: 6222                 |     andq %rdx,%rdx			# test len
+0x1fd: 74d501000000000000   | 	jne loop 				# return loop if it's not 0
+0x206: 90                   | 	ret
                             | 
                             | # The stack starts here and grows to lower addresses
 0x400:                      | 	.pos 0x400

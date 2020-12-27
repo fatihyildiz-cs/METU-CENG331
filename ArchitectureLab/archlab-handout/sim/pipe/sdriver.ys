@@ -40,23 +40,153 @@ ncopy:
 ##################################################################
 # You can modify this portion
 	# Loop header
-	xorq %rax,%rax		# count = 0;
+	irmovq $0, %rax		# count = 0;
 	andq %rdx,%rdx		# len <= 0?
-	jle Done		# if so, goto Done:
+	jle Done		# if len <= 0, go to Done
+	iaddq $-8, %rdx
+	jl thereAreLeftovers	# if 0 < length < 8, go to leftOvers
+	# for 8 <= length, fall
 
-Loop:	mrmovq (%rdi), %r10	# read val from src...
-	rmmovq %r10, (%rsi)	# ...and store it to dst
-	andq %r10, %r10		# val <= 0?
-	jle Npos		# if so, goto Npos:
-	irmovq $1, %r10
-	addq %r10, %rax		# count++
-Npos:	irmovq $1, %r10
-	subq %r10, %rdx		# len--
-	irmovq $8, %r10
-	addq %r10, %rdi		# src++
-	addq %r10, %rsi		# dst++
-	andq %rdx,%rdx		# len > 0?
-	jg Loop			# if so, goto Loop:
+Loop:
+	mrmovq (%rdi), %r8	# r8 = first val
+	mrmovq 8(%rdi), %r9	# r9 = second val
+	mrmovq 16(%rdi), %r10	# r10 = third val
+	mrmovq 24(%rdi), %r11	# r11 = third val
+
+	andq %r8, %r8	# check if first val is positive
+	jle cp1 				# if not pos, got to c1
+	iaddq $1, %rax  # else, increment rax
+
+cp1:
+	rmmovq %r8, (%rsi)	# write the first val
+	rmmovq %r9, 8(%rsi)	# write the second val
+	rmmovq %r10, 16(%rsi)	# write the second val
+	rmmovq %r11, 24(%rsi)	# write the second val
+
+	andq %r9, %r9	# check if second val is positive
+	jle cp2 # if not pos, go to cp2
+	iaddq $1, %rax  # else, increment rax
+
+cp2:
+	andq %r10, %r10	# check if third val is positive
+	jle cp3 # if not pos, go to cp3
+	iaddq $1, %rax  # else, increment rax
+
+cp3:
+	andq %r11, %r11	# check if fourth val is positive
+	jle cp4 # if not pos, go to cp3
+	iaddq $1, %rax  # else, increment rax
+
+cp4:
+	mrmovq 32(%rdi), %r8	# r8 = fifth val
+	mrmovq 40(%rdi), %r9	# r9 = sixth val
+	mrmovq 48(%rdi), %r10	# r10 = seventh val
+	mrmovq 56(%rdi), %r11	# r11 = eighth val
+
+	andq %r8, %r8	# check if fifth val is positive
+	jle cp5 				# if not pos, got to c1
+	iaddq $1, %rax  # else, increment rax
+	
+cp5:
+	rmmovq %r8, 32(%rsi)	# write the fifth val
+	rmmovq %r9, 40(%rsi)	# write the sixth val
+	rmmovq %r10, 48(%rsi)	# write the seventh val
+	rmmovq %r11, 56(%rsi)	# write the eighth val
+
+	andq %r9, %r9	# check if sixth val is positive
+	jle cp6 # if not pos, go to cp2
+	iaddq $1, %rax  # else, increment rax
+
+cp6:
+	andq %r10, %r10	# check if seventh val is positive
+	jle cp7 # if not pos, go to cp2
+	iaddq $1, %rax  # else, increment rax
+
+cp7:
+	andq %r11, %r11	# check if eighth val is positive
+	jle inc # if not pos, go to cp2
+	iaddq $1, %rax  # else, increment rax
+
+inc:
+	iaddq $64, %rdi		# src += 64
+	iaddq $64, %rsi		# dst += 64
+	iaddq	$-8, %rdx
+	jge Loop			# if so, goto Loop:
+
+thereAreLeftovers:
+	iaddq $7, %rdx
+
+r1:
+	jl Done
+	mrmovq (%rdi), %r10
+	iaddq $8, %rdi		# src++
+	rmmovq %r10, (%rsi)
+	iaddq $8, %rsi		# dst++
+	andq %r10, %r10
+	jle r2
+	iaddq $1, %rax
+r2:
+	iaddq  $-1, %rdx       # len--
+	jl Done
+	mrmovq (%rdi), %r10
+	iaddq $8, %rdi		# src++
+	rmmovq %r10, (%rsi)
+	iaddq $8, %rsi		# dst++
+	andq %r10, %r10
+	jle r3
+	iaddq $1, %rax
+r3:
+	iaddq  $-1, %rdx       # len--
+	jl Done
+	mrmovq (%rdi), %r10
+	iaddq $8, %rdi		# src++
+	rmmovq %r10, (%rsi)
+	iaddq $8, %rsi		# dst++
+	andq %r10, %r10
+	jle r4
+	iaddq $1, %rax
+r4:
+	iaddq  $-1, %rdx       # len--
+	jl Done
+	mrmovq (%rdi), %r10
+	iaddq $8, %rdi		# src++
+	rmmovq %r10, (%rsi)
+	iaddq $8, %rsi		# dst++
+	andq %r10, %r10
+	jle r5
+	iaddq $1, %rax
+r5:
+	iaddq  $-1, %rdx       # len--
+	jl Done
+	mrmovq (%rdi), %r10
+	iaddq $8, %rdi		# src++
+	rmmovq %r10, (%rsi)
+	iaddq $8, %rsi		# dst++
+	andq %r10, %r10
+	jle r6
+	iaddq $1, %rax
+r6:
+	iaddq  $-1, %rdx       # len--
+	jl Done
+	mrmovq (%rdi), %r10
+	iaddq $8, %rdi		# src++
+	rmmovq %r10, (%rsi)
+	iaddq $8, %rsi		# dst++
+	andq %r10, %r10
+	jle r7
+	iaddq $1, %rax
+r7:
+	iaddq  $-1, %rdx       # len--
+	jl Done
+	mrmovq (%rdi), %r10
+	iaddq $8, %rdi		# src++
+	rmmovq %r10, (%rsi)
+	iaddq $8, %rsi		# dst++
+	andq %r10, %r10
+	jle Done
+	iaddq $1, %rax
+
+
 ##################################################################
 # Do not modify the following section of code
 # Function epilogue.
@@ -74,9 +204,9 @@ EndFun:
 	.align 8
 src:
 	.quad -1
-	.quad -2
+	.quad 2
 	.quad 3
-	.quad 4
+	.quad -4
 	.quad 0xbcdefa # This shouldn't get moved
 
 	.align 16

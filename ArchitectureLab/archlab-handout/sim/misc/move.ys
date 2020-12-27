@@ -36,7 +36,7 @@ move:
 	rrmovq %rdx, %r12 	# loop condition
 
 	subq %r11, %r10		# src_v = src_v - dst_v
-	jg while
+	jge while
 
 	rrmovq %rsi, %r10   	# src_v = src;
 
@@ -85,7 +85,7 @@ loop:
 
 	addq %rcx, %rsi      # src += step
   	addq %rcx, %rdi      # dst += step
-	iaddq $-1, %rdx      # len--
+	subq %r13, %rdx      # len--
 
 test:
     andq %rdx,%rdx			# test len

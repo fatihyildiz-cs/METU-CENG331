@@ -1,0 +1,68 @@
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Describe how and why you modified the baseline code.
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	xorq %rax,%rax		# count = 0;
+	andq %rdx,%rdx		# len <= 0?
+	jle Done		# if so, goto Done:
+	iaddq $-1, %rdx
+	je leftOvers
+
+Loop:
+	mrmovq (%rdi), %r10	# r10 = first val
+	iaddq $-2, %rdx		# len----
+	rmmovq %r10, (%rsi)	# write the first val
+	andq %r10, %r10	# check if first val is positive
+	jle cp1 				# if not pos, got to c1
+	iaddq $1, %rax  # else, increment rax
+
+cp1:
+	mrmovq 8(%rdi), %r10	# r11 = second val
+	rmmovq %r10, 8(%rsi)	# write the second val
+	andq %r10, %r10	# check if second val is positive
+	jle cp2 # if not pos, go to cp2
+	iaddq $1, %rax  # else, increment rax
+
+
+cp2:
+	iaddq $16, %rdi		# src++++
+	iaddq $16, %rsi		# dst++++
+	andq %rdx,%rdx		# len > 0?
+	jg Loop			# if so, goto Loop:
+
+leftOvers:
+	jl lastTouches
+	mrmovq (%rdi), %r10
+	rmmovq %r10, (%rsi)
+	iaddq $8, %rdi		# src++
+	iaddq $8, %rsi		# dst++
+	andq %r10, %r10
+	jle Done
+	iaddq $1, %rax
+
+lastTouches:
+	iaddq $1, %rdx
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */

@@ -18,27 +18,97 @@
                             | 	# Loop header
 0x000: 6300                 | 	xorq %rax,%rax		# count = 0;
 0x002: 6222                 | 	andq %rdx,%rdx		# len <= 0?
-0x004: 715d00000000000000   | 	jle Done		# if so, goto Done:
+0x004: 71ce01000000000000   | 	jle Done		# if so, goto Done:
+0x00d: c0f2feffffffffffffff | 	iaddq $-2, %rdx
+0x017: 729101000000000000   | 	jl leftOvers
                             | 
-0x00d: 50a70000000000000000 | Loop:	mrmovq (%rdi), %r10	# read val from src...
-0x017: 40a60000000000000000 | 	rmmovq %r10, (%rsi)	# ...and store it to dst
-0x021: 62aa                 | 	andq %r10, %r10		# val <= 0?
-0x023: 713800000000000000   | 	jle Npos		# if so, goto Npos:
-0x02c: 30fa0100000000000000 | 	irmovq $1, %r10
-0x036: 60a0                 | 	addq %r10, %rax		# count++
-0x038: 30fa0100000000000000 | Npos:	irmovq $1, %r10
-0x042: 61a2                 | 	subq %r10, %rdx		# len--
-0x044: 30fa0800000000000000 | 	irmovq $8, %r10
-0x04e: 60a7                 | 	addq %r10, %rdi		# src++
-0x050: 60a6                 | 	addq %r10, %rsi		# dst++
-0x052: 6222                 | 	andq %rdx,%rdx		# len > 0?
-0x054: 760d00000000000000   | 	jg Loop			# if so, goto Loop:
+0x020:                      | Loop:
+0x020: c0f2f8ffffffffffffff | 	iaddq $-8, %rdx			# len -= 8
+0x02a: 50870000000000000000 | 	mrmovq (%rdi), %r8	# r10 = first val
+0x034: 50970800000000000000 | 	mrmovq 8(%rdi), %r9	# r11 = second val
+0x03e: 50a71000000000000000 | 	mrmovq 16(%rdi), %r10	# r12 = third val
+0x048: 50b71800000000000000 | 	mrmovq 24(%rdi), %r11	# r12 = third val
+                            | 
+0x052: 6288                 | 	andq %r8, %r8	# check if first val is positive
+0x054: 716700000000000000   | 	jle cp1 				# if not pos, got to c1
+0x05d: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+                            | 
+0x067:                      | cp1:
+0x067: 40860000000000000000 | 	rmmovq %r8, (%rsi)	# write the first val
+0x071: 40960800000000000000 | 	rmmovq %r9, 8(%rsi)	# write the second val
+0x07b: 40a61000000000000000 | 	rmmovq %r10, 16(%rsi)	# write the second val
+0x085: 40b61800000000000000 | 	rmmovq %r11, 24(%rsi)	# write the second val
+                            | 
+0x08f: 6299                 | 	andq %r9, %r9	# check if second val is positive
+0x091: 71a400000000000000   | 	jle cp2 # if not pos, go to cp2
+0x09a: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+                            | 
+0x0a4:                      | cp2:
+0x0a4: 62aa                 | 	andq %r10, %r10	# check if third val is positive
+0x0a6: 71b900000000000000   | 	jle cp3 # if not pos, go to cp3
+0x0af: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+                            | 
+0x0b9:                      | cp3:
+0x0b9: 50872000000000000000 | 	mrmovq 32(%rdi), %r8	# r10 = fifth val
+0x0c3: 50972800000000000000 | 	mrmovq 40(%rdi), %r9	# r11 = sixth val
+0x0cd: 50a73000000000000000 | 	mrmovq 48(%rdi), %r10	# r12 = seventh val
+0x0d7: 50b73800000000000000 | 	mrmovq 56(%rdi), %r11	# r12 = eighth val
+0x0e1: 62bb                 | 	andq %r11, %r11	# check if fourth val is positive
+0x0e3: 71f600000000000000   | 	jle cp4 # if not pos, go to cp3
+0x0ec: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+                            | 
+0x0f6:                      | cp4:
+0x0f6: 40862000000000000000 | 	rmmovq %r8, 32(%rsi)	# write the fifth val
+0x100: 40962800000000000000 | 	rmmovq %r9, 40(%rsi)	# write the sixth val
+0x10a: 40a63000000000000000 | 	rmmovq %r10, 48(%rsi)	# write the seventh val
+0x114: 40b63800000000000000 | 	rmmovq %r11, 56(%rsi)	# write the eighth val
+0x11e: 6288                 | 	andq %r8, %r8	# check if fifth val is positive
+0x120: 713301000000000000   | 	jle cp5 				# if not pos, got to c1
+0x129: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+                            | 
+0x133:                      | cp5:
+0x133: 6299                 | 	andq %r9, %r9	# check if sixth val is positive
+0x135: 714801000000000000   | 	jle cp6 # if not pos, go to cp2
+0x13e: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+                            | 
+0x148:                      | cp6:
+0x148: 62aa                 | 	andq %r10, %r10	# check if seventh val is positive
+0x14a: 715d01000000000000   | 	jle cp7 # if not pos, go to cp2
+0x153: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+                            | 
+0x15d:                      | cp7:
+0x15d: 62bb                 | 	andq %r11, %r11	# check if eighth val is positive
+0x15f: 717201000000000000   | 	jle cp8 # if not pos, go to cp2
+0x168: c0f00100000000000000 | 	iaddq $1, %rax  # else, increment rax
+                            | 
+                            | 
+0x172:                      | cp8:
+                            | 
+0x172: c0f74000000000000000 | 	iaddq $64, %rdi		# src += 64
+0x17c: c0f64000000000000000 | 	iaddq $64, %rsi		# dst += 64
+0x186: 6222                 | 	andq %rdx,%rdx		# len > 0?
+0x188: 762000000000000000   | 	jg Loop			# if so, goto Loop:
+                            | 
+                            | 
+0x191:                      | leftOvers:
+                            | 	#jl lastTouches
+0x191: 50a70000000000000000 | 	mrmovq (%rdi), %r10
+0x19b: c0f70800000000000000 | 	iaddq $8, %rdi		# src++
+0x1a5: 40a60000000000000000 | 	rmmovq %r10, (%rsi)
+0x1af: c0f60800000000000000 | 	iaddq $8, %rsi		# dst++
+0x1b9: 62aa                 | 	andq %r10, %r10
+0x1bb: 71ce01000000000000   | 	jle Done
+0x1c4: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 
+0x1ce:                      | lastTouches:
+                            | 	#iaddq $1, %rdx
+                            | 
                             | ##################################################################
                             | # Do not modify the following section of code
                             | # Function epilogue.
-0x05d:                      | Done:
-0x05d: 90                   | 	ret
+0x1ce:                      | Done:
+0x1ce: 90                   | 	ret
                             | ##################################################################
                             | # Keep the following label at the end of your function
-0x05e:                      | End:
+0x1cf:                      | End:
                             | #/* $end ncopy-ys */
