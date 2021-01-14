@@ -12,11 +12,11 @@
 team_t team = {
     "Team",                     /* Team name */
 
-    "Student Name",             /* First member full name */
-    "eXXXXXXX",                 /* First member id */
+    "Fatih YILDIZ",             /* First member full name */
+    "e2306793",                 /* First member id */
 
-    "",                         /* Second member full name (leave blank if none) */
-    "",                         /* Second member id (leave blank if none) */
+    "Ipek CAGLAYAN",                         /* Second member full name (leave blank if none) */
+    "e2306090",                         /* Second member id (leave blank if none) */
 
     "",                         /* Third member full name (leave blank if none) */
     ""                          /* Third member id (leave blank if none) */
@@ -30,68 +30,145 @@ team_t team = {
  * Various typedefs and helper functions for the bokeh function
  * You may modify these any way you like.                       
  ****************************************************************/
-
-/* A struct used to compute averaged pixel value */
-typedef struct {
-    int red;
-    int green;
-    int blue;
-    int num;
-} pixel_sum;
-
-/* Compute min and max of two integers, respectively */
-static int min(int a, int b) { return (a < b ? a : b); }
-static int max(int a, int b) { return (a > b ? a : b); }
-
-/* 
- * initialize_pixel_sum - Initializes all fields of sum to 0 
- */
-static void initialize_pixel_sum(pixel_sum *sum) 
+static pixel avg(int dim, int i, int j, pixel *src)
 {
-    sum->red = sum->green = sum->blue = 0;
-    sum->num = 0;
-    return;
-}
-
-/* 
- * accumulate_sum - Accumulates field values of p in corresponding 
- * fields of sum 
- */
-static void accumulate_sum(pixel_sum *sum, pixel p) 
-{
-    sum->red += (int) p.red;
-    sum->green += (int) p.green;
-    sum->blue += (int) p.blue;
-    sum->num++;
-    return;
-}
-
-/* 
- * assign_sum_to_pixel - Computes averaged pixel value in current_pixel 
- */
-static void assign_sum_to_pixel(pixel *current_pixel, pixel_sum sum) 
-{
-    current_pixel->red = (unsigned short) (sum.red/sum.num);
-    current_pixel->green = (unsigned short) (sum.green/sum.num);
-    current_pixel->blue = (unsigned short) (sum.blue/sum.num);
-    return;
-}
-
-/* 
- * avg - Returns averaged pixel value at (i,j) 
- */
-static pixel avg(int dim, int i, int j, pixel *src) 
-{
-    int ii, jj;
-    pixel_sum sum;
+    int index, ind_dim;
     pixel current_pixel;
+    pixel temp0, temp1, temp2, temp3, temp4, temp5, temp6, temp7, temp8;
+    index = i*dim+j;
+    ind_dim=index+dim;
+    if (i == 0)
+    {
+        if (j == 0)
+        { //top-left corner
+            temp0 = src[0];
+            temp1 = src[1];
+            temp2 = src[dim];
+            temp3 = src[dim + 1];
+            current_pixel.red = (temp0.red + temp1.red + temp2.red + temp3.red) >> 2;
+            current_pixel.green = (temp0.green + temp1.green + temp2.green + temp3.green) >> 2;
+            current_pixel.blue = (temp0.blue + temp1.blue + temp2.blue + temp3.blue) >> 2;
+        }
+        else if (j == dim - 1)
+        { //top-right corner
+            index = 2 * dim;
+            temp0 = src[j];
+            temp1 = src[j - 1];
+            temp2 = src[index - 1];
+            temp3 = src[index - 2];
+            current_pixel.red = (temp0.red + temp1.red + temp2.red + temp3.red) >> 2;
+            current_pixel.green = (temp0.green + temp1.green + temp2.green + temp3.green) >> 2;
+            current_pixel.blue = (temp0.blue + temp1.blue + temp2.blue + temp3.blue) >> 2;
+        }
+        else
+        {
+            index = dim + j;
+            temp0 = src[j - 1];
+            temp1 = src[j];
+            temp2 = src[j + 1];
+            temp3 = src[index - 1];
+            temp4 = src[index];
+            temp5 = src[index + 1];
 
-    initialize_pixel_sum(&sum);
-    for(ii = max(i-1, 0); ii <= min(i+1, dim-1); ii++) 
-    for(jj = max(j-1, 0); jj <= min(j+1, dim-1); jj++) 
-        accumulate_sum(&sum, src[RIDX(ii, jj, dim)]);
+            current_pixel.red = (temp0.red + temp1.red + temp2.red + temp3.red + temp4.red + temp5.red) / 6;
+            current_pixel.green = (temp0.green + temp1.green + temp2.green + temp3.green + temp4.green + temp5.green) / 6;
+            current_pixel.blue = (temp0.blue + temp1.blue + temp2.blue + temp3.blue + temp4.blue + temp5.blue) / 6;
+        }
+    }
+    else if (i == dim - 1)
+    {
+        if (j == 0)
+        { //bottom-left corner
+            index = i * dim;
+            temp0 = src[index];
+            temp1 = src[index + 1];
+            temp2 = src[index - dim];
+            temp3 = src[index - dim + 1];
+            current_pixel.red = (temp0.red + temp1.red + temp2.red + temp3.red) >> 2;
+            current_pixel.green = (temp0.green + temp1.green + temp2.green + temp3.green) >> 2;
+            current_pixel.blue = (temp0.blue + temp1.blue + temp2.blue + temp3.blue) >> 2;
+        }
+        else if (j == dim - 1)
+        { //bottom-right corner
+            index = i * dim + j;
+            temp0 = src[index];
+            temp1 = src[index - 1];
+            temp2 = src[index - dim];
+            temp3 = src[index - dim - 1];
+            current_pixel.red = (temp0.red + temp1.red + temp2.red + temp3.red) >> 2;
+            current_pixel.green = (temp0.green + temp1.green + temp2.green + temp3.green) >> 2;
+            current_pixel.blue = (temp0.blue + temp1.blue + temp2.blue + temp3.blue) >> 2;
+        }
+        else
+        {
+            index = i * dim + j;
+            temp0 = src[index - 1];
+            temp1 = src[index];
+            temp2 = src[index + 1];
+            temp3 = src[index - dim - 1];
+            temp4 = src[index - dim];
+            temp5 = src[index - dim + 1];
 
-    assign_sum_to_pixel(&current_pixel, sum);
+            current_pixel.red = (temp0.red + temp1.red + temp2.red + temp3.red + temp4.red + temp5.red) / 6;
+            current_pixel.green = (temp0.green + temp1.green + temp2.green + temp3.green + temp4.green + temp5.green) / 6;
+            current_pixel.blue = (temp0.blue + temp1.blue + temp2.blue + temp3.blue + temp4.blue + temp5.blue) / 6;
+        }
+    }
+    else
+    {
+        if (j == 0)
+        {
+            index = i * dim;
+            ind_dim = index + dim;
+            temp0 = src[index];
+            temp1 = src[index + 1];
+            temp2 = src[index - dim];
+            temp3 = src[index - dim + 1];
+            temp4 = src[ind_dim];
+            temp5 = src[ind_dim + 1];
+
+            current_pixel.red = (temp0.red + temp1.red + temp2.red + temp3.red + temp4.red + temp5.red) / 6;
+            current_pixel.green = (temp0.green + temp1.green + temp2.green + temp3.green + temp4.green + temp5.green) / 6;
+            current_pixel.blue = (temp0.blue + temp1.blue + temp2.blue + temp3.blue + temp4.blue + temp5.blue) / 6;
+        }
+        else if (j == dim - 1)
+        {
+            index = i * dim + j;
+            ind_dim = index + dim;
+            temp0 = src[index];
+            temp1 = src[index - 1];
+            temp2 = src[index - dim];
+            temp3 = src[index - dim - 1];
+            temp4 = src[ind_dim];
+            temp5 = src[ind_dim - 1];
+
+            current_pixel.red = (temp0.red + temp1.red + temp2.red + temp3.red + temp4.red + temp5.red) / 6;
+            current_pixel.green = (temp0.green + temp1.green + temp2.green + temp3.green + temp4.green + temp5.green) / 6;
+            current_pixel.blue = (temp0.blue + temp1.blue + temp2.blue + temp3.blue + temp4.blue + temp5.blue) / 6;
+        }
+        else
+        {
+            if (0 < i && i < (dim - 1) && 0 < j && j < (dim - 1))
+            {
+                index = i * dim + j;
+                ind_dim = index + dim;
+                temp0 = src[index];
+                temp1 = src[index - 1];
+                temp2 = src[index + 1];
+                temp3 = src[ind_dim - 1];
+                temp4 = src[ind_dim];
+                temp5 = src[ind_dim + 1];
+                temp6 = src[index - dim - 1];
+                temp7 = src[index - dim];
+                temp8 = src[index - dim + 1];
+
+                current_pixel.red = (temp0.red + temp1.red + temp2.red + temp3.red + temp4.red + temp5.red + temp6.red + temp7.red + temp8.red) / 9;
+                current_pixel.green = (temp0.green + temp1.green + temp2.green + temp3.green + temp4.green + temp5.green + temp6.green + temp7.green + temp8.green) / 9;
+                current_pixel.blue = (temp0.blue + temp1.blue + temp2.blue + temp3.blue + temp4.blue + temp5.blue + temp6.blue + temp7.blue + temp8.blue) / 9;
+            }
+        }
+    }
+
     return current_pixel;
 }
 
@@ -124,7 +201,18 @@ void naive_bokeh(int dim, pixel *src, short *flt, pixel *dst) {
 char bokeh_descr[] = "bokeh: Current working version";
 void bokeh(int dim, pixel *src, short *flt, pixel *dst) 
 {
-    naive_bokeh(dim, src, flt, dst);
+    int i, j;
+    
+    for(i = 0; i < dim; i++) {
+        for(j = 0; j < dim; j++) {
+			int index  = RIDX(i,j,dim);
+			
+            if ( !flt[index] )
+                dst[index] = avg(dim, i, j, src);
+            else
+                dst[index] = src[index];
+        }
+    }
 }
 
 /*********************************************************************
@@ -137,8 +225,8 @@ void bokeh(int dim, pixel *src, short *flt, pixel *dst)
 
 void register_bokeh_functions() 
 {
-    add_bokeh_function(&naive_bokeh, naive_bokeh_descr);   
-    add_bokeh_function(&bokeh, bokeh_descr);   
+    //add_bokeh_function(&naive_bokeh, naive_bokeh_descr);   
+    //add_bokeh_function(&bokeh, bokeh_descr);   
     /* ... Register additional test functions here */
 }
 
@@ -170,7 +258,132 @@ void naive_hadamard(int dim, int *src1, int *src2, int *dst) {
 char hadamard_descr[] = "hadamard: Current working version";
 void hadamard(int dim, int *src1, int *src2, int *dst) 
 {
-    naive_hadamard(dim, src1, src2, dst);
+    int i, j,x1,x2,x3,x4,y1,y2,y3,y4;
+
+    for(i = 0; i < dim; i+=8){
+        for(j = 0; j < dim; j+=4){
+            x1=RIDX(i, j, dim);
+            x2=RIDX(i, j+1, dim);
+            x3=RIDX(i, j+2, dim);
+            x4=RIDX(i, j+3, dim);
+            y1=src1[x1]*src2[x1];
+            y2=src1[x2]*src2[x2];
+            y3=src1[x3]*src2[x3];
+            y4=src1[x4]*src2[x4];
+            dst[x1]=y1;
+            dst[x2]=y2;
+            dst[x3]=y3;
+            dst[x4]=y4;
+
+        }
+        for(j = 0; j < dim; j+=4){
+            x1=RIDX(i+1, j, dim);
+            x2=RIDX(i+1, j+1, dim);
+            x3=RIDX(i+1, j+2, dim);
+            x4=RIDX(i+1, j+3, dim);
+            y1=src1[x1]*src2[x1];
+            y2=src1[x2]*src2[x2];
+            y3=src1[x3]*src2[x3];
+            y4=src1[x4]*src2[x4];
+            dst[x1]=y1;
+            dst[x2]=y2;
+            dst[x3]=y3;
+            dst[x4]=y4;
+
+        }
+        for(j = 0; j < dim; j+=4){
+            x1=RIDX(i+2, j, dim);
+            x2=RIDX(i+2, j+1, dim);
+            x3=RIDX(i+2, j+2, dim);
+            x4=RIDX(i+2, j+3, dim);
+            y1=src1[x1]*src2[x1];
+            y2=src1[x2]*src2[x2];
+            y3=src1[x3]*src2[x3];
+            y4=src1[x4]*src2[x4];
+            dst[x1]=y1;
+            dst[x2]=y2;
+            dst[x3]=y3;
+            dst[x4]=y4;
+
+        }
+        for(j = 0; j < dim; j+=4){
+            x1=RIDX(i+3, j, dim);
+            x2=RIDX(i+3, j+1, dim);
+            x3=RIDX(i+3, j+2, dim);
+            x4=RIDX(i+3, j+3, dim);
+            y1=src1[x1]*src2[x1];
+            y2=src1[x2]*src2[x2];
+            y3=src1[x3]*src2[x3];
+            y4=src1[x4]*src2[x4];
+            dst[x1]=y1;
+            dst[x2]=y2;
+            dst[x3]=y3;
+            dst[x4]=y4;
+
+        }
+        for(j = 0; j < dim; j+=4){
+            x1=RIDX(i+4, j, dim);
+            x2=RIDX(i+4, j+1, dim);
+            x3=RIDX(i+4, j+2, dim);
+            x4=RIDX(i+4, j+3, dim);
+            y1=src1[x1]*src2[x1];
+            y2=src1[x2]*src2[x2];
+            y3=src1[x3]*src2[x3];
+            y4=src1[x4]*src2[x4];
+            dst[x1]=y1;
+            dst[x2]=y2;
+            dst[x3]=y3;
+            dst[x4]=y4;
+
+        }
+        for(j = 0; j < dim; j+=4){
+            x1=RIDX(i+5, j, dim);
+            x2=RIDX(i+5, j+1, dim);
+            x3=RIDX(i+5, j+2, dim);
+            x4=RIDX(i+5, j+3, dim);
+            y1=src1[x1]*src2[x1];
+            y2=src1[x2]*src2[x2];
+            y3=src1[x3]*src2[x3];
+            y4=src1[x4]*src2[x4];
+            dst[x1]=y1;
+            dst[x2]=y2;
+            dst[x3]=y3;
+            dst[x4]=y4;
+
+        }
+        for(j = 0; j < dim; j+=4){
+            x1=RIDX(i+6, j, dim);
+            x2=RIDX(i+6, j+1, dim);
+            x3=RIDX(i+6, j+2, dim);
+            x4=RIDX(i+6, j+3, dim);
+            y1=src1[x1]*src2[x1];
+            y2=src1[x2]*src2[x2];
+            y3=src1[x3]*src2[x3];
+            y4=src1[x4]*src2[x4];
+            dst[x1]=y1;
+            dst[x2]=y2;
+            dst[x3]=y3;
+            dst[x4]=y4;
+
+        }
+        for(j = 0; j < dim; j+=4){
+            x1=RIDX(i+7, j, dim);
+            x2=RIDX(i+7, j+1, dim);
+            x3=RIDX(i+7, j+2, dim);
+            x4=RIDX(i+7, j+3, dim);
+            y1=src1[x1]*src2[x1];
+            y2=src1[x2]*src2[x2];
+            y3=src1[x3]*src2[x3];
+            y4=src1[x4]*src2[x4];
+            dst[x1]=y1;
+            dst[x2]=y2;
+            dst[x3]=y3;
+            dst[x4]=y4;
+
+        }
+
+    
+    }
 }
 /*********************************************************************
  * register_hadamard_functions - Register all of your different versions
