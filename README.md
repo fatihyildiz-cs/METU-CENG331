@@ -1,6 +1,6 @@
 # METU-CENG331
 
-These are all of the material used for CENG331 Computer Architecture class at 2020/2021 Fall at METU.
+These are all of the material and solutions for CENG331 Computer Architecture class at 2020/2021 Fall at METU.
 
 Bomb Lab: Inspect the assembly code of a unique program to find the input string that would defuse the bomb.
 
